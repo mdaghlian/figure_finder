@@ -1,0 +1,71 @@
+# #!/usr/bin/env bash
+
+# specify your folder here!
+export FIGURE_DUMP="/data1/projects/dumoulinlab/Lab_members/Marcus/programs/figure_dump"
+export FIGURE_FINDER="/data1/projects/dumoulinlab/Lab_members/Marcus/programs/figure_finder"
+
+FF_SETUP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FF_SETUP_FILE="${FF_SETUP_DIR}/ff_setup"
+FF_REPO_DIR=$(dirname ${FF_SETUP_DIR})
+
+if [[ $1 == "setup" ]]; then
+    echo "==================================================================================================="
+    echo "                            SETUP SCRIPT FOR FIGURE FINDER REPOSITORY                              "
+    echo "==================================================================================================="
+    echo "Setting up ~/.bash_profile"
+    # ignore permission changes in git
+    git config core.fileMode false 2>/dev/null
+
+    # make scripts executable
+    chmod -R 775 ${FF_REPO_DIR}/bin
+    chmod -R 775 ${FF_REPO_DIR}/shell
+
+    if [ -f ~/.bash_profile ]; then
+        search_for="source ${FF_SETUP_FILE}"
+        case `grep -Fx "${search_for}" ~/.bash_profile >/dev/null; echo $?` in
+            0)
+                # code if found
+                echo "FF already present"
+                ;;
+            1)
+                # code if not found
+                (
+                echo 
+                echo "# Inserted via the FIGURE FINDER-repository"
+                echo "source ${FF_SETUP_FILE}"
+                ) >> ~/.bash_profile
+                ;;
+            *)
+                # code if an error occurred
+                echo "ERROR: Could not complete setup.."
+                ;;
+        esac
+    else
+        (
+        echo "# .bash_profile"
+        echo "# Inserted via the linescanning-repository"
+        echo "source ${FF_SETUP_FILE}"
+        ) >> ~/.bash_profile
+    fi
+    
+    # create files...     
+    if [[ ! -e $FIGURE_DUMP ]]; then
+        mkdir $FIGURE_DUMP
+    else
+        echo "$FIGURE_DUMP already exists" 1>&2
+    fi    
+    
+    if [[ ! -e $FIGURE_DUMP/recycle_bin ]]; then
+        mkdir $FIGURE_DUMP/recycle_bin
+    else
+        echo "$FIGURE_DUMP/recycle_bin already exists" 1>&2
+    fi    
+
+    echo $FIGURE_DUMP > $FF_REPO_DIR/bin/figure_dump_dir.txt
+    # install repo
+    python $FF_REPO_DIR/setup.py develop    
+fi
+
+# Make executables available in environment
+export PATH=${PATH}:${FIGURE_FINDER}/bin
+export PATH=${PATH}:${FIGURE_FINDER}/shell

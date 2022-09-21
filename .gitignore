@@ -1,0 +1,4 @@
+z_untracked/*
+*.egg-info
+*.vscode
+*__pycache__
