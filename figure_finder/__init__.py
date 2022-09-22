@@ -9,13 +9,8 @@ import sys
 import matplotlib as mpl
 import pandas as pd
 
-# from .utils import *
-# from .database_tools import *
-# from .scrape_fig_info import *
-
 from .database_tools import *
-from .scrape_fig_info import *
 from .utils import *
 
 # Run the csv clean function
-clean_csv()
+# clean_csv()

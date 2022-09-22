@@ -4,52 +4,16 @@ opj = os.path.join
 from datetime import datetime
 import numpy as np
 import sys
+import re
 
 # MATPLOTLIB STUFF
 import matplotlib as mpl
 import pandas as pd
 
-from .scrape_fig_info import get_figure_name, scrape_tags_from_figure
-
 with open(opj(os.path.dirname(os.path.realpath(__file__)), 'figure_dump_dir.txt')) as f:
     figure_dump = f.read().splitlines()[0]
 csv_tag_file = opj(figure_dump, 'csv_tag_file.csv')
 figure_dump_bin = opj(figure_dump, 'recycle_bin')
-
-
-def clean_csv():
-    if not os.path.exists(csv_tag_file):
-        print('Figure finder: NO CSV FILE')
-        return
-    figure_db = load_figure_db()
-    if figure_db==[]:
-        print('Figure finder: Database is empty')
-        return
-
-    fig_name_list = [figure_db[i]['name'] for i in range(len(figure_db))]     
-    # [1] Create a backup
-    back_up_name = 'backup_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.csv'
-    back_up_file = opj(figure_dump_bin, back_up_name)
-    os.system(f'cp {csv_tag_file} {back_up_file}')  
-    # [2] Compare figures listed in the csv with figures listed in the folder...
-    files_in_directory = sorted(os.listdir(figure_dump))
-    entries_to_keep = []
-    for i, this_fig in enumerate(fig_name_list):
-        # check is there a png?
-        is_png = this_fig+'.png' in files_in_directory
-        is_svg = this_fig+'.svg' in files_in_directory
-        is_img = is_png | is_svg
-        if not is_img:
-            print(f'Could not find {this_fig}, in dir')            
-            print('Deleting...')
-        else:
-            entries_to_keep.append(i)
-    new_figure_db = []
-    for i in entries_to_keep:
-        new_figure_db += [figure_db[i]]
-
-    save_figure_db(new_figure_db)
-    return
 
 def remove_csv_entries(fig_names2remove):
     if isinstance(fig_names2remove, str):
@@ -141,7 +105,6 @@ def remove_fig_with_tags(fig_tags, fig_name=[], exclude=None, save_folder=figure
     return None
 
 
-
 def find_fig_with_tags(fig_tags, fig_name=[], exclude=None):
     # Load pkl tag file
     figure_db = load_figure_db()
@@ -160,9 +123,6 @@ def find_fig_with_tags(fig_tags, fig_name=[], exclude=None):
     match_fig_tags = [' '.join(figure_db[i]['tags']) for i in match_fig_names_idc]            
     match_idc = check_string_for_substring(filt=fig_tags, str2check=match_fig_tags, exclude=exclude)
     figure_db_TAG_MATCH = [figure_db_NAME_MATCH[i] for i in match_idc]
-    # match_fig_path = [match_fig_path[i] for i in match_idc]
-    # match_fig_name = [match_fig_name[i] for i in match_idc]
-    # match_fig_tags = [match_fig_tags[i] for i in match_idc]
 
     return figure_db_TAG_MATCH
 
@@ -203,29 +163,38 @@ def check_string_for_substring(filt, str2check, exclude=None):
         raise FileNotFoundError(f"Could not find fig with tags: {filt}")
     return full_match_idc
 
+def get_figure_name(fig, fig_name, fig_date):
+    if fig_name=='':
+        # Does the figure have a suptitle?
+        if fig._suptitle!=None:
+            fig_suptitle = fig._suptitle.get_text().replace(' ', '_')
+            fig_name = fig_suptitle
+        else: # check for the first axis with a title
+            for fig_child in fig.get_children():
+                if isinstance(fig_child, mpl.axes.Axes):
+                    fig_ax_title = fig_child.get_title().replace(' ', '_')
+                    fig_name = fig_ax_title
+                    break
+    if fig_name=='':
+        # Still not found an id...
+        fig_name = f"random_{fig_date}"
+    
+    return fig_name
 
-def save_figure_with_tags(fig, fig_tags=[], fig_name='', save_folder=figure_dump, **kwargs):
+def save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_dump, **kwargs):
     # GET PARAMETERS....
-    # dpi = kwargs.get("dpi", 70)    
-    save_folder = kwargs.get("save_folder", figure_dump)    
     extract_tags = kwargs.get("extract_tags", True)
-    proj = kwargs.get("proj", None)
     save_cwd = kwargs.get("save_cwd", True)
     save_cell_code = kwargs.get("save_cell_code", True)
     save_nb_path = kwargs.get("save_nb_path", True)
     fig_overwrite = kwargs.get("fig_overwrite", None) ### *** CHANGE THIS TO AUTOMATICALLY OVERWRITE OR NOT...***
-    if not os.path.exists(save_folder):
-        os.mkdir(save_folder)
-    #
-    if proj==None:
-        proj_str = ''
-    else:
-        proj_str = f'proj-{proj}'
+    annotate_svg = kwargs.get("annotate_svg", True)
+
     fig_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     fig_name = get_figure_name(fig, fig_name, fig_date=fig_date)
     # *** CHECK WHETHER THE FILE ALREADY EXISTS ***
-    files_in_directory = sorted(os.listdir(figure_dump))
-    if (fig_name+'.svg' in files_in_directory) or (fig_name+'.png' in files_in_directory):
+    files_in_directory = sorted(os.listdir(save_folder))
+    if fig_name+'.svg' in files_in_directory:
         print(f'{fig_name} already exists...')
         if fig_overwrite!=None:
             save_instruction=fig_overwrite
@@ -237,7 +206,13 @@ def save_figure_with_tags(fig, fig_tags=[], fig_name='', save_folder=figure_dump
             save_instruction = input()
         if save_instruction=="o":
             # Overwrite - > delete the old version
-            remove_csv_entries(fig_name)
+            try: 
+                remove_csv_entries(fig_name)
+            except:
+                print(f'Could not remove {fig_name} from csv database...' )
+                print(f'carrying on...' )
+            
+
         elif save_instruction=="s":
             # SKIPPING
             print('Not saving - skipping')
@@ -246,15 +221,18 @@ def save_figure_with_tags(fig, fig_tags=[], fig_name='', save_folder=figure_dump
             print('Adding date to fig name to remove conflict...')
             fig_name = fig_name + '_' + fig_date
 
-    if extract_tags:
-        fig_tags = scrape_tags_from_figure(fig, fig_tags=fig_tags)
     
-    fig_path = opj(save_folder, f'{proj_str}{fig_name}')
+    fig_path = opj(save_folder, fig_name)
+
+    # Now save as an svg
+    fig.savefig(fig_path+'.svg', bbox_inches='tight', format='svg')
+
     # Add figure name & date to tags...
     fig_tags += [fig_name]
     fig_tags += [fig_date]
     # get them from the figure
-
+    if extract_tags:
+        fig_tags = scrape_tags_from_svg(svg_file=fig_path+'.svg', fig_tags=fig_tags)
 
     if save_cwd:
         fig_cwd = os.getcwd()
@@ -277,7 +255,9 @@ def save_figure_with_tags(fig, fig_tags=[], fig_name='', save_folder=figure_dump
         cell_code_path = fig_path + '.txt'
         text_file = open(cell_code_path, "w")
         text_file.write(cell_code_str)
-        text_file.close()        
+        text_file.close()
+    else: 
+        cell_code_str = ''
         
     this_db_entry = {
         'name' : fig_name,
@@ -287,28 +267,24 @@ def save_figure_with_tags(fig, fig_tags=[], fig_name='', save_folder=figure_dump
         'cwd' : fig_cwd,
         'nb_path' : notebook_path,        
     }
-    # Now save as an svg -> including all the 
-    save_fig_and_code_as_svg(fig, fig_dict=this_db_entry, cell_code_str=cell_code_str)
+
+    if annotate_svg:
+        print('Inserting info into svg file')
+        insert_info_to_svg(fig_dict=this_db_entry, cell_code_str=cell_code_str)
+    else:
+        print('Not inserting info to svg file...')
+    
     # Load csv...
     figure_db = load_figure_db()
-    figure_db += [{
-        'name' : fig_name,
-        'date' : fig_date,
-        'path' : fig_path,
-        'tags' : fig_tags,
-        'cwd' : fig_cwd,
-        'nb_path' : notebook_path,
-    }]
+    figure_db += [this_db_entry]
     save_figure_db(figure_db)
 
     return
 
-
-def save_fig_and_code_as_svg(fig, fig_dict, cell_code_str):
-    # [1] Save as svg
-    fig.savefig(fig_dict['path']+'.svg', bbox_inches='tight', format='svg')
+def insert_info_to_svg(fig_dict, cell_code_str):
 
     svg_file = fig_dict['path']+'.svg'
+    
     # [2] Create string to add to the svg...
     svg_insert = ["<text>"]
     svg_insert += ["<!--"]
@@ -338,4 +314,67 @@ def save_fig_and_code_as_svg(fig, fig_dict, cell_code_str):
         if '<metadata>' in line:
             write_file.write(svg_insert_str + "\n") 
 
-    return
+    return    
+
+
+def scrape_tags_from_svg(svg_file, fig_tags=[]):
+
+    with open(svg_file) as f:
+        svg_str = f.read()
+    # [1] Get date 
+    start_date_mark = "<dc:date>"
+    end_date_mark = "</dc:date>"
+    date_result = re.search(f'{start_date_mark}(.*){end_date_mark}', svg_str)
+    
+    fig_tags += [date_result.group(1)]
+
+    start_txt_mark = "<!--"
+    end_txt_mark = "-->"
+    txt_result = re.findall(f'{start_txt_mark}(.*){end_txt_mark}', svg_str)
+    
+    fig_tags += txt_result
+    # Split up tags with spaces in them...
+    split_fig_tags = []
+    for tag in fig_tags:
+        split_fig_tags += tag.split()
+    fig_tags = split_fig_tags
+    # Remove duplicates
+    fig_tags = list(set(fig_tags))
+
+    return fig_tags
+
+
+
+# def clean_csv():
+#     if not os.path.exists(csv_tag_file):
+#         print('Figure finder: NO CSV FILE')
+#         return
+#     figure_db = load_figure_db()
+#     if figure_db==[]:
+#         print('Figure finder: Database is empty')
+#         return
+
+#     fig_name_list = [figure_db[i]['name'] for i in range(len(figure_db))]     
+#     # [1] Create a backup
+#     back_up_name = 'backup_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.csv'
+#     back_up_file = opj(figure_dump_bin, back_up_name)
+#     os.system(f'cp {csv_tag_file} {back_up_file}')  
+#     # [2] Compare figures listed in the csv with figures listed in the folder...
+#     files_in_directory = sorted(os.listdir(figure_dump))
+#     entries_to_keep = []
+#     for i, this_fig in enumerate(fig_name_list):
+#         # check is there a png?
+#         is_png = this_fig+'.png' in files_in_directory
+#         is_svg = this_fig+'.svg' in files_in_directory
+#         is_img = is_png | is_svg
+#         if not is_img:
+#             print(f'Could not find {this_fig}, in dir')            
+#             print('Deleting...')
+#         else:
+#             entries_to_keep.append(i)
+#     new_figure_db = []
+#     for i in entries_to_keep:
+#         new_figure_db += [figure_db[i]]
+
+#     save_figure_db(new_figure_db)
+#     return    

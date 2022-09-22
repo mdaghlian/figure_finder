@@ -1,13 +1,25 @@
 # figure finder repository
-I often make many many figures, with lots of variations, across several notebooks. It is often difficult to find the desired figure, and when you do find it, it is useful to know when you made it and how you made it (this is not always obvious).
+I often make many many figures, with lots of variations, across several notebooks. It is often difficult to find the desired figure, and when you do find it, it is useful to know when you made it and how you made it.
 
 The motivation behind this package is to help with these issues. 
 
 NB - At the moment - this only works with notebooks. (I run it in VScode)
 
-Figures are all dumped in one folder as svg files. The code in the notebook cell used to create them is saved in a corresponding text file, and a database is created. The database (a csv file) has information on how the figure was made (in which notebook, with the code from the cell), what the figure is about (tags are extracted from all the text in the figure).
+Figures are saved as svg files. The package automatically extracts important information about the figure, including:
 
-You can then search for your figures using the tags. This includes the date that the figure was made, any tags that the user specified, as well as any text which is in the figure. 
+* Any text (which is saved under tags)
+
+* The date
+
+* Code from the notebook cell which was used to make the figure
+
+* The path to the notebook used to make the figure
+
+This information is then written to the figure svg file, inside the metadata component. It can be viewed by opening the svg with a text editor 
+
+By default all figures are saved to the "figure_dump" folder, but you can specify where you want the figures to go.
+
+A secondary function is that it creates a database of figures, using a csv / dict. You can then use the search functions and key words to find and display your figure as well as the accompanying metadata.  
 
 See the example notebook
 
@@ -22,15 +34,8 @@ This package is still in development and its API might change. Use at your own r
 ... done!
 
 ## TODO
-[*] Support for SVG files (both saving & extracting tags)
 
 [*] Option to save from outside a notebook (i.e., in a script) 
-
-[*] Make a function which can delete entries with *tags* function
-
-[*] Create CLI functions 
-
-[*] Create support for project specific folders (& databases?)
 
 [*] Extract the plot type automatically (e.g., scatter, box... Possible?)
 
