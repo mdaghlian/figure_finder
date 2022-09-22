@@ -26,7 +26,7 @@ def print_matching_code_file(fig_tags, fig_name=[], exclude=None, save_folder=fi
     
     if (len(match_fig_path)>1) & (idx==[]):
         print('More than 1 figs match the description')
-        print('Be more specific or select the file, using idx=X')
+        print('Be more specific or select the file, using idx=X, (or -i X)')
         print('Files found include:')
         for i,this_name in enumerate(match_fig_name):
             print(f'{i:03}, {this_name}')
@@ -63,7 +63,7 @@ def show_fig_with_tags(fig_tags, fig_name=[], exclude=None, save_folder=figure_d
     if len(match_fig_path)>1:
         if idx==[]:
             print('More than 1 figs match the description')
-            print('Be more specific or select the file, using idx=X')
+            print('Be more specific or select the file, using idx=X (or -i X)')
             print('Files found include:')
             for i,this_name in enumerate(match_fig_name):
                 print(f'{i:03}, {this_name}')

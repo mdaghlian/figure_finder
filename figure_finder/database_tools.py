@@ -223,6 +223,7 @@ def save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_d
 
     
     fig_path = opj(save_folder, fig_name)
+    fig_path = os.path.abspath(fig_path)
 
     # Now save as an svg
     fig.savefig(fig_path+'.svg', bbox_inches='tight', format='svg')

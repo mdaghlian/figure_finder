@@ -47,5 +47,7 @@ This package is still in development and its API might change. Use at your own r
 
 [*] Search for date range
 
+[*] Make search not case sensitive
+
 
 ```
