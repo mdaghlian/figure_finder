@@ -49,5 +49,6 @@ This package is still in development and its API might change. Use at your own r
 
 [*] Make search not case sensitive
 
+[*] Option to compare files with competing names - and resolve them by appending the different tags...
 
 ```
