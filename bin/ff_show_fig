@@ -27,29 +27,32 @@ def main(argv):
 
     """
 ---------------------------------------------------------------------------------------------------
-ff_cli
+ff_show_fig
 
 Usage:
-  ff_cli [arguments] [options]
+    ff_print_code [arguments] [options]
+    Prints the code used to generate the figure matching the search terms
 
 Arguments:
-    -t|--tag                            
-    -e|--exclude 
-    -n|--name      
-    -i|--idx                              
+    -t|--tag        can be a single word, or a list separated by commas (with no whitespace)           
+    -e|--exclude    can be a single word, or a list separated by commas (with no whitespace)           
+    -i|--idx        if multiple figures match the pattern, select this figure    
 
 Example:
+    ff_show_fig -t blah,bloop -e hello
+    # if more than one file matches this pattern then you will get a list of file names with an 
+    # associated id, use idx to specify which one you want
+    ff_show_fig -t blah,bloop -e hello -i 0
 
 ---------------------------------------------------------------------------------------------------
 """
 
     fig_tags    = None
     exclude     = None
-    fig_name    = []
     idx         = []
 
     try:
-        opts = getopt.getopt(argv,"ghs:t:e:n:i:",["help", "tag=", "exclude=", "name=", "idx="])[0]
+        opts = getopt.getopt(argv,"ghs:t:e:i:",["help", "tag=", "exclude=", "idx="])[0]
     except getopt.GetoptError:
         print(main.__doc__)
         sys.exit(2)
@@ -62,11 +65,9 @@ Example:
             fig_tags = arg.split(',')
         elif opt in ("-e", "--exclude"):
             exclude = arg.split(',')
-        elif opt in ("-n", "--name"):
-            fig_name = arg
         elif opt in ("-i", "--idx"):
             idx = int(arg)
-    ff.show_fig_with_tags(fig_tags, fig_name=fig_name, exclude=exclude, idx=idx)
+    ff.show_fig_with_tags(fig_tags, exclude=exclude, idx=idx)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

@@ -21,6 +21,8 @@ By default all figures are saved to the "figure_dump" folder, but you can specif
 
 A secondary function is that it creates a database of figures, using a csv / dict. You can then use the search functions and key words to find and display your figure as well as the accompanying metadata.  
 
+The commands in /bin can be called from the command line from anywhere. They can be used to print the code for a figure
+
 See the example notebook
 
 

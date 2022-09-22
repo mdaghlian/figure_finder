@@ -27,19 +27,18 @@ def main(argv):
 
     """
 ---------------------------------------------------------------------------------------------------
-ff_cli
+ff_remove_entries
 
 Usage:
-  ff_cli [arguments] [options]
+    ff_cli [arguments] [options]
+    Deletes entries in csv database (and corresponding png/svg/txt files) which match the mattern
 
 Arguments:
-    -t|--tag                            
-    -e|--exclude 
-    -n|--name      
-    -i|--idx                              
+    -t|--tag        can be a single word, or a list separated by commas (with no whitespace)           
+    -e|--exclude    can be a single word, or a list separated by commas (with no whitespace)           
 
 Example:
-
+    ff_remove_entries -t blah,bloop -e hello
 ---------------------------------------------------------------------------------------------------
 """
 
