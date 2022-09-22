@@ -12,10 +12,11 @@ import pandas as pd
 
 from .database_tools import find_fig_with_tags
 
-with open(opj(os.getcwd(), 'bin', 'figure_dump_dir.txt')) as f:
+with open(opj(os.path.dirname(os.path.realpath(__file__)), 'figure_dump_dir.txt')) as f:
     figure_dump = f.read().splitlines()[0]
 csv_tag_file = opj(figure_dump, 'csv_tag_file.csv')
 figure_dump_bin = opj(figure_dump, 'recycle_bin')
+
 
 
 def print_matching_code_file(fig_tags, fig_name=[], exclude=None, save_folder=figure_dump, idx=[]):
@@ -38,9 +39,9 @@ def print_matching_code_file(fig_tags, fig_name=[], exclude=None, save_folder=fi
         match_fig_path = match_fig_path[0]
         match_fig_name = match_fig_name[0]
 
-    print(f"Opening {match_fig_name.replace('.png', '')}")
-    fig_code_path = match_fig_path.replace('.png', '.txt')
-    f = open(fig_code_path, 'r')            
+    print(f"Opening {match_fig_name}")
+    fig_code_path = match_fig_path
+    f = open(fig_code_path+'.txt', 'r')            
     fig_code_text = f.read()
     f.close()
     print('')
@@ -73,12 +74,12 @@ def show_fig_with_tags(fig_tags, fig_name=[], exclude=None, save_folder=figure_d
 
         else:
             print(f'Opening {match_fig_name[idx]}')
-            os.system(f'eog {match_fig_path[idx]} & ')
+            os.system(f'eog {match_fig_path[idx]}.svg & ')
 
     else:
         for i,this_path in enumerate(match_fig_path):
             print(f'Opening {match_fig_name[i]}')
-            os.system(f'eog {this_path} & ')
+            os.system(f'eog {this_path}.svg & ')
         
 
     return None

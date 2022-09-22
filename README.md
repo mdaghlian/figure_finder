@@ -5,7 +5,7 @@ The motivation behind this package is to help with these issues.
 
 NB - At the moment - this only works with notebooks. (I run it in VScode)
 
-Figures are all dumped in one folder as png files. The code in the notebook cell used to create them is saved in a corresponding text file, and a database is created. The database (a csv file) has information on how the figure was made (in which notebook, with the code from the cell), what the figure is about (tags are extracted from all the text in the figure).
+Figures are all dumped in one folder as svg files. The code in the notebook cell used to create them is saved in a corresponding text file, and a database is created. The database (a csv file) has information on how the figure was made (in which notebook, with the code from the cell), what the figure is about (tags are extracted from all the text in the figure).
 
 You can then search for your figures using the tags. This includes the date that the figure was made, any tags that the user specified, as well as any text which is in the figure. 
 
@@ -17,18 +17,28 @@ This package is still in development and its API might change. Use at your own r
 
 ## Installation
 [1] In ff_setup -> decide where you want your figures to be dumped (i.e., set FIGURE_DUMP)
+
 [2] run >> bash shell/ff_setup setup
 ... done!
 
 ## TODO
-[] Support for SVG files (both saving & extracting tags)
-[] Option to save from outside a notebook (i.e., in a script) 
-[] Make a function which can delete entries with *tags* function
-[] Create CLI functions 
-[] Create support for project specific folders (& databases?)
-[] Extract the plot type automatically (e.g., scatter, box... Possible?)
-[] Experiment using a pandas dataframe (probably a much more efficient way to go than the current thing...)
-[] Include search by cwd, and or nb path
-[] Search for date range
+[*] Support for SVG files (both saving & extracting tags)
+
+[*] Option to save from outside a notebook (i.e., in a script) 
+
+[*] Make a function which can delete entries with *tags* function
+
+[*] Create CLI functions 
+
+[*] Create support for project specific folders (& databases?)
+
+[*] Extract the plot type automatically (e.g., scatter, box... Possible?)
+
+[*] Experiment using a pandas dataframe (probably a much more efficient way to go than the current thing...)
+
+[*] Include search by cwd, and or nb path
+
+[*] Search for date range
+
 
 ```

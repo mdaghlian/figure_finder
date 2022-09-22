@@ -11,7 +11,7 @@ import pandas as pd
 
 from .scrape_fig_info import get_figure_name, scrape_tags_from_figure
 
-with open(opj(os.getcwd(), 'bin', 'figure_dump_dir.txt')) as f:
+with open(opj(os.path.dirname(os.path.realpath(__file__)), 'figure_dump_dir.txt')) as f:
     figure_dump = f.read().splitlines()[0]
 csv_tag_file = opj(figure_dump, 'csv_tag_file.csv')
 figure_dump_bin = opj(figure_dump, 'recycle_bin')
@@ -35,7 +35,11 @@ def clean_csv():
     files_in_directory = sorted(os.listdir(figure_dump))
     entries_to_keep = []
     for i, this_fig in enumerate(fig_name_list):
-        if this_fig not in files_in_directory:
+        # check is there a png?
+        is_png = this_fig+'.png' in files_in_directory
+        is_svg = this_fig+'.svg' in files_in_directory
+        is_img = is_png | is_svg
+        if not is_img:
             print(f'Could not find {this_fig}, in dir')            
             print('Deleting...')
         else:
@@ -63,13 +67,11 @@ def remove_csv_entries(fig_names2remove):
     for i, this_fig in enumerate(fig_name_list):
         if this_fig in fig_names2remove:
             print(f'deleting {this_fig}')
-            fig_img_path = figure_db[i]['path']
-            fig_cmd_path = figure_db[i]['path'].replace('.png', '.txt')
-            if os.path.exists(fig_img_path):
-                os.system(f'mv {fig_img_path} {opj(figure_dump_bin, this_fig)}') 
-            if os.path.exists(fig_cmd_path):
-                os.system(f"mv {fig_cmd_path} {opj(figure_dump_bin, this_fig.replace('.png', '.txt'))}")             
-
+            # Check for png 
+            extensions_to_delete = ['.png', '.txt', '.svg']
+            for this_ext in extensions_to_delete:
+                if os.path.exists(figure_db[i]['path'] + this_ext):
+                    os.system(f"mv {figure_db[i]['path'] + this_ext} {opj(figure_dump_bin, this_fig + this_ext)}") 
         else:
             entries_to_keep.append(i)
     new_figure_db = []
@@ -204,7 +206,7 @@ def check_string_for_substring(filt, str2check, exclude=None):
 
 def save_figure_with_tags(fig, fig_tags=[], fig_name='', save_folder=figure_dump, **kwargs):
     # GET PARAMETERS....
-    dpi = kwargs.get("dpi", 70)    
+    # dpi = kwargs.get("dpi", 70)    
     save_folder = kwargs.get("save_folder", figure_dump)    
     extract_tags = kwargs.get("extract_tags", True)
     proj = kwargs.get("proj", None)
@@ -223,7 +225,7 @@ def save_figure_with_tags(fig, fig_tags=[], fig_name='', save_folder=figure_dump
     fig_name = get_figure_name(fig, fig_name, fig_date=fig_date)
     # *** CHECK WHETHER THE FILE ALREADY EXISTS ***
     files_in_directory = sorted(os.listdir(figure_dump))
-    if fig_name in files_in_directory:
+    if (fig_name+'.svg' in files_in_directory) or (fig_name+'.png' in files_in_directory):
         print(f'{fig_name} already exists...')
         if fig_overwrite!=None:
             save_instruction=fig_overwrite
@@ -232,7 +234,7 @@ def save_figure_with_tags(fig, fig_tags=[], fig_name='', save_folder=figure_dump
             print('Skip ? ("s")')
             print('Save copy with date ? ("d")')
             print('To automatically choose one of these options edit "fig_overwrite" argument in utils.save_figure_with_tags')
-        save_instruction = input()
+            save_instruction = input()
         if save_instruction=="o":
             # Overwrite - > delete the old version
             remove_csv_entries(fig_name)
@@ -242,17 +244,17 @@ def save_figure_with_tags(fig, fig_tags=[], fig_name='', save_folder=figure_dump
             return
         elif save_instruction=="d":
             print('Adding date to fig name to remove conflict...')
-            fig_name = fig_name.split('.png')[0] + '_' + fig_date
+            fig_name = fig_name + '_' + fig_date
 
+    if extract_tags:
+        fig_tags = scrape_tags_from_figure(fig, fig_tags=fig_tags)
+    
     fig_path = opj(save_folder, f'{proj_str}{fig_name}')
-    fig.savefig(fig_path, bbox_inches='tight', dpi=dpi)
     # Add figure name & date to tags...
     fig_tags += [fig_name]
     fig_tags += [fig_date]
     # get them from the figure
 
-    if extract_tags:
-        fig_tags = scrape_tags_from_figure(fig, fig_tags=fig_tags)
 
     if save_cwd:
         fig_cwd = os.getcwd()
@@ -272,11 +274,21 @@ def save_figure_with_tags(fig, fig_tags=[], fig_name='', save_folder=figure_dump
     if save_cell_code:
         # Get the code from the cell that we are saving in...
         cell_code_str = get_ipython().get_parent()['content']['code']
-        cell_code_path = fig_path.replace('.png', '.txt')
+        cell_code_path = fig_path + '.txt'
         text_file = open(cell_code_path, "w")
         text_file.write(cell_code_str)
         text_file.close()        
         
+    this_db_entry = {
+        'name' : fig_name,
+        'date' : fig_date,
+        'path' : fig_path,
+        'tags' : fig_tags,
+        'cwd' : fig_cwd,
+        'nb_path' : notebook_path,        
+    }
+    # Now save as an svg -> including all the 
+    save_fig_and_code_as_svg(fig, fig_dict=this_db_entry, cell_code_str=cell_code_str)
     # Load csv...
     figure_db = load_figure_db()
     figure_db += [{
@@ -288,5 +300,42 @@ def save_figure_with_tags(fig, fig_tags=[], fig_name='', save_folder=figure_dump
         'nb_path' : notebook_path,
     }]
     save_figure_db(figure_db)
+
+    return
+
+
+def save_fig_and_code_as_svg(fig, fig_dict, cell_code_str):
+    # [1] Save as svg
+    fig.savefig(fig_dict['path']+'.svg', bbox_inches='tight', format='svg')
+
+    svg_file = fig_dict['path']+'.svg'
+    # [2] Create string to add to the svg...
+    svg_insert = ["<text>"]
+    svg_insert += ["<!--"]
+    svg_insert += ["*********** START - info inserted by figure finder ********"]
+    svg_insert += ["***********************************************************"]
+    svg_insert += ["***********************************************************"]    
+    svg_insert += [f'DATE : {fig_dict["date"]}']
+    svg_insert += [f'FIGURE NAME: {fig_dict["name"]}']
+    svg_insert += [f'FIGURE CWD: {fig_dict["cwd"]}']
+    svg_insert += [f'NOTEBOOK: {fig_dict["nb_path"]}']
+    tag_str = ','.join(fig_dict['tags'])
+    svg_insert += [f'TAGS: {tag_str}']
+    svg_insert += ["***********************************************************"]    
+    svg_insert += ["********* CODE FROM NB CELL USED TO MAKE FIG **************"]    
+    svg_insert += [cell_code_str]
+    svg_insert += ["***********************************************************"]
+    svg_insert += ["***********************************************************"]    
+    svg_insert += ["************* END - info inserted by figure finder ********"]
+    svg_insert += ["-->"]
+    svg_insert += ["</text>"]    
+    
+    svg_insert_str = '\n'.join(svg_insert)
+    inputfile = open(svg_file, 'r').readlines()
+    write_file = open(svg_file,'w')
+    for line in inputfile:
+        write_file.write(line)
+        if '<metadata>' in line:
+            write_file.write(svg_insert_str + "\n") 
 
     return

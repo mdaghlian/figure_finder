@@ -61,7 +61,7 @@ if [[ $1 == "setup" ]]; then
         echo "$FIGURE_DUMP/recycle_bin already exists" 1>&2
     fi    
 
-    echo $FIGURE_DUMP > $FF_REPO_DIR/bin/figure_dump_dir.txt
+    echo $FIGURE_DUMP > $FF_REPO_DIR/figure_finder/figure_dump_dir.txt
     # install repo
     python $FF_REPO_DIR/setup.py develop    
 fi

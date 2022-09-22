@@ -10,10 +10,11 @@ import matplotlib as mpl
 import pandas as pd
 
 
-with open(opj(os.getcwd(), 'bin', 'figure_dump_dir.txt')) as f:
+with open(opj(os.path.dirname(os.path.realpath(__file__)), 'figure_dump_dir.txt')) as f:
     figure_dump = f.read().splitlines()[0]
 csv_tag_file = opj(figure_dump, 'csv_tag_file.csv')
 figure_dump_bin = opj(figure_dump, 'recycle_bin')
+
 
 def get_figure_name(fig, fig_name, fig_date):
     if fig_name=='':
@@ -31,8 +32,6 @@ def get_figure_name(fig, fig_name, fig_date):
         # Still not found an id...
         fig_name = f"random_{fig_date}"
     
-    # Add png...
-    fig_name += '.png'
     return fig_name
 
 def scrape_tags_from_figure(fig, start_obj=[], fig_tags=[]):
