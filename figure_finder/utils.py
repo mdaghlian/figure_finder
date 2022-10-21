@@ -70,7 +70,7 @@ def show_fig_with_tags(fig_tags, fig_name=[], exclude=None, save_folder=figure_d
         elif idx=='all':
             for i,this_path in enumerate(match_fig_path):
                 print(f'Opening {match_fig_name[i]}')
-                os.system(f'eog {this_path} & ')
+                os.system(f'eog {this_path}.svg & ')
 
         else:
             print(f'Opening {match_fig_name[idx]}')

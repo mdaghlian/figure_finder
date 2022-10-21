@@ -2,6 +2,7 @@ import os
 opj = os.path.join
 
 from datetime import datetime
+import inspect
 import numpy as np
 import sys
 import re
@@ -106,7 +107,7 @@ def remove_fig_with_tags(fig_tags, fig_name=[], exclude=None, save_folder=figure
 
 
 def find_fig_with_tags(fig_tags, fig_name=[], exclude=None):
-    # Load pkl tag file
+    # Load tag file
     figure_db = load_figure_db()
     fig_name_list = [figure_db[i]['name'] for i in range(len(figure_db))] 
     # check fig names 
@@ -181,7 +182,7 @@ def get_figure_name(fig, fig_name, fig_date):
     
     return fig_name
 
-def save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_dump, **kwargs):
+def save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_dump, return_db_entr=False, **kwargs):
     # GET PARAMETERS....
     extract_tags = kwargs.get("extract_tags", True)
     save_cwd = kwargs.get("save_cwd", True)
@@ -241,22 +242,36 @@ def save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_d
         fig_cwd = ''
 
     if save_nb_path:
-        # Comes in complex string form...
-        notebook_path = get_ipython().get_parent()['metadata']['cellId']
-        # e.g., 'vscode-notebook-cell:/data1/projects/dumoulinlab/Lab_members/Marcus/programs/figure_finder/example.ipynb#ch0000031'
-        # So need to format it so that it is nice...
-        notebook_path = notebook_path.split('cell:')[-1]        
-        notebook_path = notebook_path.split('.ipynb')[0] + '.ipynb'
+        try: # First try the method that works for noetbookes
+            notebook_path = get_ipython().get_parent()['metadata']['cellId']
+            # e.g., 'vscode-notebook-cell:/data1/projects/dumoulinlab/Lab_members/Marcus/programs/figure_finder/example.ipynb#ch0000031'
+            # So need to format it so that it is nice...
+            notebook_path = notebook_path.split('cell:')[-1]        
+            notebook_path = notebook_path.split('.ipynb')[0] + '.ipynb'
+        except: 
+            # Try the method that works for scripts...
+            notebook_path = inspect.stack()[1].filename
+            # check that this isn't the just another figure_finder function
+            if 'report_printer' in notebook_path:
+                notebook_path = inspect.stack()[2].filename
     else:
         notebook_path = ''
 
     if save_cell_code:
-        # Get the code from the cell that we are saving in...
-        cell_code_str = get_ipython().get_parent()['content']['code']
-        cell_code_path = fig_path + '.txt'
-        text_file = open(cell_code_path, "w")
-        text_file.write(cell_code_str)
-        text_file.close()
+        try: 
+            # Get the code from the cell that we are saving in...
+            cell_code_str = get_ipython().get_parent()['content']['code']
+            cell_code_path = fig_path + '.txt'
+            text_file = open(cell_code_path, "w")
+            text_file.write(cell_code_str)
+            text_file.close()
+        except:
+            f = open(notebook_path, 'r')            
+            cell_code_str = f.read()            
+            cell_code_path = fig_path + '.txt'
+            text_file = open(cell_code_path, "w")
+            text_file.write(cell_code_str)
+            text_file.close()            
     else: 
         cell_code_str = ''
         
@@ -280,6 +295,9 @@ def save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_d
     figure_db += [this_db_entry]
     save_figure_db(figure_db)
 
+    if return_db_entr:
+        return this_db_entry
+
     return
 
 def insert_info_to_svg(fig_dict, cell_code_str):
@@ -300,7 +318,7 @@ def insert_info_to_svg(fig_dict, cell_code_str):
     svg_insert += [f'TAGS: {tag_str}']
     svg_insert += ["***********************************************************"]    
     svg_insert += ["********* CODE FROM NB CELL USED TO MAKE FIG **************"]    
-    svg_insert += [cell_code_str]
+    svg_insert += [cell_code_str.replace('--', '/-/')]
     svg_insert += ["***********************************************************"]
     svg_insert += ["***********************************************************"]    
     svg_insert += ["************* END - info inserted by figure finder ********"]
@@ -343,6 +361,53 @@ def scrape_tags_from_svg(svg_file, fig_tags=[]):
     fig_tags = list(set(fig_tags))
 
     return fig_tags
+
+def find_fig_by_date():
+    # Load tag file
+    figure_db = load_figure_db()
+    fig_date_list = [figure_db[i]['date'] for i in range(len(figure_db))]
+    # only want 
+    print(fig_date_list)
+    return 
+
+
+
+def clean_csv():
+    if not os.path.exists(csv_tag_file):
+        print('Figure finder: NO CSV FILE')
+        return
+    figure_db = load_figure_db()
+    if figure_db==[]:
+        print('Figure finder: Database is empty')
+        return
+
+    fig_path_list = [figure_db[i]['path'] for i in range(len(figure_db))]     
+    # [1] Create a backup
+    back_up_name = 'backup_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.csv'
+    back_up_file = opj(figure_dump_bin, back_up_name)
+    os.system(f'cp {csv_tag_file} {back_up_file}')  
+    # [2] Check whether the figures still exist...
+    entries_to_keep = []
+    for i, this_fig in enumerate(fig_path_list):
+        # check is there a png?
+        is_png = os.path.exists(this_fig+'.png')# in files_in_directory
+        is_svg = os.path.exists(this_fig+'.svg')
+        is_txt = os.path.exists(this_fig+'.txt')
+        is_img = is_png | is_svg | is_txt
+        if not is_img:
+            print(f'Could not find {this_fig}, in dir')            
+            print('Deleting...')
+        else:
+            # print(f'*** COULD FIND ***{this_fig}')
+            entries_to_keep.append(i)
+    new_figure_db = []
+    for i in entries_to_keep:
+        new_figure_db += [figure_db[i]]
+
+    save_figure_db(new_figure_db)
+    return  
+
+
 
 
 

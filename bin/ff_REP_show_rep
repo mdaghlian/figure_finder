@@ -47,7 +47,7 @@ Example:
 ---------------------------------------------------------------------------------------------------
 """
 
-    fig_tags    = None
+    rep_tags    = None
     exclude     = None
     idx         = []
 
@@ -62,7 +62,7 @@ Example:
             print(main.__doc__)
             sys.exit()
         elif opt in ("-t", "--tag"):
-            fig_tags = arg.split(',')
+            rep_tags = arg.split(',')
         elif opt in ("-e", "--exclude"):
             exclude = arg.split(',')
         elif opt in ("-i", "--idx"):
@@ -70,7 +70,31 @@ Example:
             print(idx)
             if idx!="all":
                 idx = int(arg)
-    ff.show_fig_with_tags(fig_tags, exclude=exclude, idx=idx)
+    
+    rep_db_match = ff.REP_find_rep_with_tags(rep_tags, exclude=exclude)
+    match_rep_name = [rep_db_match[i]['file_name'] for i in range(len(rep_db_match))]
+    match_rep_path = [rep_db_match[i]['html_path'] for i in range(len(rep_db_match))]
+
+    if (len(match_rep_name)>1) & (idx==[]):
+        print('More than 1 reports match the description')
+        print('Be more specific or select the file, using idx=X, (or -i X)')
+        print('Files found include:')
+        for i,this_name in enumerate(match_rep_name):
+            print(f'{i:03}, {this_name}')
+        
+        return # EXIT FUNCTION
+    if idx!=[]:
+        match_rep_path = match_rep_path[idx]
+        match_rep_name = match_rep_name[idx]
+    else:
+        match_rep_path = match_rep_path[0]
+        match_rep_name = match_rep_name[0]
+
+    print('Opening - {match_rep_name}')
+    os.system(f'firefox {match_rep_path}')
+
+    return
+    
 
 if __name__ == "__main__":
     main(sys.argv[1:])

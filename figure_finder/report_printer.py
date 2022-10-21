@@ -1,0 +1,115 @@
+import os
+opj = os.path.join
+
+from datetime import datetime
+import numpy as np
+import sys
+import re
+
+# MATPLOTLIB STUFF
+import matplotlib as mpl
+import pandas as pd
+
+from .database_tools import save_fig_and_code_as_svg
+from .report_db_tools import REP_remove_csv_entries, REP_add_rep_to_db
+
+with open(opj(os.path.dirname(os.path.realpath(__file__)), 'figure_dump_dir.txt')) as f:
+    figure_dump = f.read().splitlines()[0]
+csv_tag_file = opj(figure_dump, 'csv_tag_file.csv')
+figure_dump_bin = opj(figure_dump, 'recycle_bin')
+
+class ReportMaker(object):
+    """Model
+
+    Class that takes care of generating grids for pRF fitting and simulations
+    """
+
+    def __init__(self, file_name, file_path, report_overwrite='o', rep_tags=[]):
+        """__init__
+
+        Constructor for report maker.
+
+        """
+        self.file_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        self.file_name = file_name
+        self.file_path = os.path.abspath(opj(file_path, file_name))
+        self.html_path = os.path.abspath(opj(self.file_path, file_name+'.html')) 
+        self.img_path = os.path.abspath(opj(self.file_path, 'images'))
+        self.rep_tags = rep_tags
+        self.num_figs = 0
+
+        if os.path.exists(self.file_path):
+            print('FOLDER ALREADY EXISTS!')
+            if report_overwrite!=None:
+                save_instruction=report_overwrite
+            else:
+                print('Overwrite ? ("o")')
+                print('Skip ? ("s")')
+                print('Save copy with date ? ("d")')
+                print('To automatically choose one of these options edit "fig_overwrite" argument')
+                save_instruction = input()
+            if save_instruction=="o":
+                # Overwrite - > delete the old version
+                print('Overwriting')
+                try: 
+                    REP_remove_csv_entries(self.file_name)
+                except:
+                    print(f'Could not remove {self.file_name} from csv database...' )
+                    print(f'carrying on...' )
+            elif save_instruction=='s':
+                print('Not saving - skipping')
+                return
+            elif save_instruction=='d':
+                print('Adding date to fig name to remove conflict...')
+                date_now = self.file_date
+                file_name = file_name + '_' + date_now
+                self.file_name = file_name
+                self.file_path = os.path.abspath(opj(file_path, file_name))
+                self.html_path = os.path.abspath(opj(self.file_path, file_name+'.html')) 
+                self.img_path = os.path.abspath(opj(self.file_path, 'images'))
+                self.num_figs = 0                
+        
+        if not os.path.exists(self.file_path):
+            print('Making folder')
+            os.mkdir(self.file_path)
+        if not os.path.exists(self.img_path):
+            os.mkdir(self.img_path)
+                
+        # Start txt document
+        self.txt_doc = '<!DOCTYPE html>\n<html>\n<body>\n'
+
+    def add_title(self, text, level=1):
+        self.txt_doc += f'\n<h{level}>\n{text}\n</h{level}>\n'
+
+    def add_text(self, text):
+        """
+        Add text to string 
+        """
+        # scipy fftconvolve does not have padding options so doing it manually
+        self.txt_doc += f'\n<p>{text}</p>\n'
+    
+    def add_img(self, path_or_fig, fig_tags=[]):
+        
+        if isinstance(path_or_fig, mpl.figure.Figure):
+            fig_name = f'{self.file_name}_fig{self.num_figs:03d}'
+            db_entry = save_fig_and_code_as_svg(
+                path_or_fig, 
+                fig_tags=[], 
+                fig_name=fig_name, 
+                save_folder=self.img_path, 
+                fig_overwrite='o', 
+                return_db_entr=True)
+            self.rep_tags += db_entry['tags']
+            self.txt_doc += f'\n<img src="{opj(self.img_path, fig_name+".svg")}" >'
+            self.num_figs += 1
+        else:
+            self.txt_doc += f'\n<img src="{path_or_fig}" >\n'
+            self.num_figs += 1
+    
+    def save_html(self):
+        self.txt_doc += '\n</body>\n</html>'
+        text_file = open(self.html_path, "w")
+        text_file.write(self.txt_doc)
+        text_file.close()
+
+        REP_add_rep_to_db(self)
