@@ -27,11 +27,11 @@ def main(argv):
 
     """
 ---------------------------------------------------------------------------------------------------
-ff_print_tags
+ff_REP_print_tags
 
 Usage:
-    ff_print_tags [arguments] [options]
-    Prints all the tags associated with a figure matching the search terms
+    ff_REP_print_tags [arguments] [options]
+    Prints all the tags associated with a *FIGURE* matching the search terms
 
 Arguments:
     -t|--tag        can be a single word, or a list separated by commas (with no whitespace)           
@@ -39,10 +39,10 @@ Arguments:
     -i|--idx        if multiple figures match the pattern, select this figure    
 
 Example:
-    ff_print_tags -t blah,bloop -e hello
+    ff_REP_print_tags -t blah,bloop -e hello
     # if more than one file matches this pattern then you will get a list of file names with an 
     # associated id, use idx to specify which one you want
-    ff_print_tags -t blah,bloop -e hello -i 0
+    ff_REP_print_tags -t blah,bloop -e hello -i 0
 ---------------------------------------------------------------------------------------------------
 """
 

@@ -11,12 +11,26 @@ import re
 import matplotlib as mpl
 import pandas as pd
 
+# Get the directory where the databases (figure, and report) are stored as csvs 
 with open(opj(os.path.dirname(os.path.realpath(__file__)), 'figure_dump_dir.txt')) as f:
-    figure_dump = f.read().splitlines()[0]
-csv_tag_file = opj(figure_dump, 'csv_tag_file.csv')
-figure_dump_bin = opj(figure_dump, 'recycle_bin')
+    figure_dump = f.read().splitlines()[0]    
+csv_tag_file = opj(figure_dump, 'csv_tag_file.csv') # path to figure data base
+figure_dump_bin = opj(figure_dump, 'recycle_bin')   # path to bin - this is where deleted files will be backed up
 
 def remove_csv_entries(fig_names2remove):
+    '''remove_csv_entries
+    
+    Function to remove figures from csv database
+    Parameters
+    ----------
+    fig_names2remove: str, list
+        list or str of figure name/s (as stored in the csv database) which should be remove. 
+        The corresponding entries will be deleted, as well as the associated data (i.e., png, svg & txt files)
+    ----------
+    Returns
+    ----------
+    None    
+    '''
     if isinstance(fig_names2remove, str):
         fig_names2remove = [fig_names2remove]        
 
@@ -47,13 +61,49 @@ def remove_csv_entries(fig_names2remove):
     return None
 
 def listish_str_to_list(listish_str):
+    '''listish_str_to_list
+    
+    Function to safely load the tags from the csv database
+    Parameters
+    ----------
+    listish_str: str
+        A string for the list of tags. Unfortunately - due to the way I have set up the toolbox the tags
+        are not loaded as items in a list, but as one long string. This function formats this string, 
+        returning the tags in the desired list of strings format
+    ----------
+    Returns
+    ----------
+    split_listish_str: list of strs (i.e., the tags, in the desired format)
+    '''
     chars_to_remove = ['[', ']', '"', "'", ' ']
     for this_rm in chars_to_remove:
         listish_str = listish_str.replace(this_rm, '')
     # Now split at the commas
-    return listish_str.split(',')
+    split_listish_str = listish_str.split(',')
+    return split_listish_str
     
 def load_figure_db():
+    '''load_figure_db
+    
+    Loads the csv database of figures as a list of dicts
+    Such that if it returns figure_db where:
+    figure_db[0] is a dict with entries:
+        figure_db[0]['name']        name of the figure (as stored in csv),
+        figure_db[0]['date']        date figure was made,
+        figure_db[0]['path']        path to figure (without extentions, .svg, .png or .txt),
+        figure_db[0]['tags']        list of tags associated with the figure (descriptions, etc.),
+        figure_db[0]['cwd']         the working directory where the figure was made,
+        figure_db[0]['nb_path']     the path to the notebook (or script) where the figure was made,        
+
+    Parameters
+    ----------
+    None
+
+    ----------
+    Returns
+    ----------
+    figure_db: list of dicts (structured as written above)    
+    '''    
     if os.path.exists(csv_tag_file):
         try:
             tag_dict_dict = pd.read_csv(csv_tag_file).to_dict('index')
@@ -75,15 +125,55 @@ def load_figure_db():
     return figure_db
 
 def save_figure_db(figure_db):
+    '''save_figure_db
+    
+    Saves an updated version of the csv database         
+
+    Parameters
+    ----------
+    figure_db[0] is a dict with entries:
+        figure_db[0]['name']        name of the figure (as stored in csv),
+        figure_db[0]['date']        date figure was made,
+        figure_db[0]['path']        path to figure (without extentions, .svg, .png or .txt),
+        figure_db[0]['tags']        list of tags associated with the figure (descriptions, etc.),
+        figure_db[0]['cwd']         the working directory where the figure was made,
+        figure_db[0]['nb_path']     the path to the notebook (or script) where the figure was made,        
+    ----------
+    Returns
+    ----------
+    None        
+    '''    
     df = pd.DataFrame(figure_db)
     df.to_csv(csv_tag_file, index=False)
 
     return None
 
-def remove_fig_with_tags(fig_tags, fig_name=[], exclude=None, save_folder=figure_dump):
-    fig_db_match = find_fig_with_tags(fig_tags, fig_name=fig_name, exclude=exclude)
-    match_fig_name = [fig_db_match[i]['name'] for i in range(len(fig_db_match))]
+def remove_fig_with_tags(fig_tags, fig_name=[], exclude=None):
+    '''remove_fig_with_tags
+    
+    Function to remove figures which match a certain pattern
+    >> this will delete there entries in the csv database, and also delete the 
+    corresponding (.svg, .png, .txt) files
 
+    Parameters
+    ----------
+    fig_tags: list, str
+        include figures which have these tags
+    fig_name: str 
+        include figures with this name (easier to be more specific, if you know the exact file
+        you want removed)
+    exclude: list, str
+        do *NOT* include figures which have these tags
+    ----------
+    Returns
+    ----------
+    None
+
+    '''    
+    # Match using tags (include & exclude)
+    fig_db_match = find_fig_with_tags(fig_tags, fig_name=fig_name, exclude=exclude)
+    # Concatenate a list of figure names
+    match_fig_name = [fig_db_match[i]['name'] for i in range(len(fig_db_match))]    
     print(f'Found {len(match_fig_name)} files match')
     for this_fig in match_fig_name:
         print(this_fig)
@@ -107,6 +197,26 @@ def remove_fig_with_tags(fig_tags, fig_name=[], exclude=None, save_folder=figure
 
 
 def find_fig_with_tags(fig_tags, fig_name=[], exclude=None):
+    '''find_fig_with_tags
+    
+    Function to find figures which match a certain pattern
+
+    Parameters
+    ----------
+    fig_tags: list, str
+        include figures which have these tags
+    fig_name: str 
+        include figures with this name (easier to be more specific, if you know the exact file
+        you want removed)
+    exclude: list, str    
+        do *NOT* include figures which have these tags
+
+    Returns 
+    ---------
+    figure_db_TAG_MATCH: list of dicts
+        A list of dicts (formatted the same as the db as a whole), which match the search criteria
+
+    '''        
     # Load tag file
     figure_db = load_figure_db()
     fig_name_list = [figure_db[i]['name'] for i in range(len(figure_db))] 
@@ -127,8 +237,43 @@ def find_fig_with_tags(fig_tags, fig_name=[], exclude=None):
 
     return figure_db_TAG_MATCH
 
-# Copied from J Heijs Linescanning toolbox...
 def check_string_for_substring(filt, str2check, exclude=None):    
+    '''check_string_for_substring
+    Basically copied from a similar function in J Heijs Linescanning toolbox... (thanks!)
+    Function to find figures which match a certain pattern
+
+    Parameters
+    ----------
+    filt: list, str
+        return matches which have *ALL* of these strings   
+    str2check: list,str 
+        The list/str to be checked 
+    exclude: list, str    
+        return matches which have *NONE* of these strings   
+    
+    ---------
+    Returns 
+    ---------
+    full_match_idc: numpy array
+        The index for all of the strings (in str2check) which match your specified pattern 
+
+    ---------
+    EXAMPLE
+    ---------
+    str2check = [
+        'blah,bloop,hello,zero,fish,beep',   # Pattern 0
+        'bleh,bleep,hello,one,fish,beep',   # Pattern 1
+        'bluh,bloop,hello,two,fish,chip', # Pattern 2
+    ]
+    filt = ['fish', 'bloop']
+    exclude = ['zero']
+    full_match_idc = check_string_for_substring(filt=filt, str2check=str2check, exclude=exclude)
+
+    # Patterns 0 and 2 both have 'fish' and 'bloop' so are included based on filter
+    # BUT pattern 2 also has 'three', so would be excluded
+    # Hence, full_match_idx would be array([2]) 
+
+    '''
     if isinstance(filt, str):
         filt = [filt]
 
@@ -165,6 +310,26 @@ def check_string_for_substring(filt, str2check, exclude=None):
     return full_match_idc
 
 def get_figure_name(fig, fig_name, fig_date):
+    '''get_figure_name
+    Called while in the process of saving a figure
+    Used to extract a useful figure name if one is not specified by the user
+
+    Parameters
+    ----------
+    fig: matplotlib figure object        
+    fig_name: str 
+        By default will be '', if not specified before hand
+    fig_date: str    
+        the date when the 'fig' was constructed
+    
+    ---------
+    Returns 
+    ---------
+    fig_name: str
+        An appropriate name. Either that which is entered. Or one extracted from the
+        figure. If we cannot find an appropriate name, random+data is used
+
+    '''    
     if fig_name=='':
         # Does the figure have a suptitle?
         if fig._suptitle!=None:
@@ -182,7 +347,27 @@ def get_figure_name(fig, fig_name, fig_date):
     
     return fig_name
 
-def save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_dump, return_db_entr=False, **kwargs):
+def save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_dump, return_db_entry=False, **kwargs):
+    '''save_fig_and_code_as_svg
+    What it says on the tin 
+    Parameters
+    ----------
+    fig: matplotlib figure object        
+    fig_tags: list,str 
+    fig_name :
+    fig_date: str    
+        the date when the 'fig' was constructed
+    save_folder : 
+    return_db_entry
+    
+    ---------
+    Returns 
+    ---------
+    fig_name: str
+        An appropriate name. Either that which is entered. Or one extracted from the
+        figure. If we cannot find an appropriate name, random+data is used
+
+    '''       
     # GET PARAMETERS....
     extract_tags = kwargs.get("extract_tags", True)
     save_cwd = kwargs.get("save_cwd", True)
@@ -295,7 +480,7 @@ def save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_d
     figure_db += [this_db_entry]
     save_figure_db(figure_db)
 
-    if return_db_entr:
+    if return_db_entry:
         return this_db_entry
 
     return

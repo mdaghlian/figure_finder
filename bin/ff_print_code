@@ -31,7 +31,9 @@ ff_print_code
 
 Usage:
     ff_print_code [arguments] [options]
-    Prints the code used to generate the figure matching the search terms
+    CLI to call the function print_matching_code_file
+    Prints the code used to generate the figure matching the search terms (i.e., tags, 
+    exlude, idx).
 
 Arguments:
     -t|--tag        can be a single word, or a list separated by commas (with no whitespace)           

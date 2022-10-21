@@ -27,11 +27,12 @@ def main(argv):
 
     """
 ---------------------------------------------------------------------------------------------------
-ff_show_fig
+ff_REP_show_fig
 
 Usage:
-    ff_print_code [arguments] [options]
-    Prints the code used to generate the figure matching the search terms
+    ff_REP_show_fig [arguments] [options]
+    Opens the html files (using firefox), of the reports which match the input pattern (i.e., have 
+    the correct tags)
 
 Arguments:
     -t|--tag        can be a single word, or a list separated by commas (with no whitespace)           
@@ -39,10 +40,10 @@ Arguments:
     -i|--idx        if multiple figures match the pattern, select this figure    
 
 Example:
-    ff_show_fig -t blah,bloop -e hello
+    ff_REP_show_fig -t blah,bloop -e hello
     # if more than one file matches this pattern then you will get a list of file names with an 
     # associated id, use idx to specify which one you want
-    ff_show_fig -t blah,bloop -e hello -i 0
+    ff_REP_show_fig -t blah,bloop -e hello -i 0
 
 ---------------------------------------------------------------------------------------------------
 """
@@ -91,7 +92,7 @@ Example:
         match_rep_name = match_rep_name[0]
 
     print('Opening - {match_rep_name}')
-    os.system(f'firefox {match_rep_path}')
+    os.system(f'firefox {match_rep_path} &')
 
     return
     

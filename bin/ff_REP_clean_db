@@ -23,4 +23,31 @@ import warnings
 import json
 warnings.filterwarnings('ignore')
 
-ff.REP_clean_csv()
+def main(argv):
+
+    """
+---------------------------------------------------------------------------------------------------
+ff_REP_clean_db
+
+Usage:
+    CLI - to call REP_clean_csv
+    >> cleans the *REPORT* database (stored in the figure dump folder). Going through each entry, 
+    checking whether the corresponding file exists, and then removing the entry if it does not. 
+
+---------------------------------------------------------------------------------------------------
+"""
+    try:
+        opts = getopt.getopt(argv,"ghs:h:",["help"])[0]
+    except getopt.GetoptError:
+        print(main.__doc__)
+        sys.exit(2)
+    
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            print(main.__doc__)
+            sys.exit()
+    
+    ff.REP_clean_csv()
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

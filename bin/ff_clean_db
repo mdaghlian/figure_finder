@@ -3,6 +3,8 @@
 #$ -cwd
 #$ -V
 
+# CMD line function - it will check the figure csv database; if any of the paths to the figures no longer exist, then the corresponding 
+# entry will be removed from the figure csv database
 
 import os
 opj = os.path.join
@@ -23,4 +25,30 @@ import warnings
 import json
 warnings.filterwarnings('ignore')
 
-ff.clean_csv()
+def main(argv):
+
+    """
+---------------------------------------------------------------------------------------------------
+ff_clean_db
+
+Usage:
+    CLI - to call clean_csv
+    >> cleans the figure database (stored in the figure dump folder). Going through each entry, 
+    checking whether the corresponding file exists, and then removing the entry if it does not. 
+
+---------------------------------------------------------------------------------------------------
+"""
+    try:
+        opts = getopt.getopt(argv,"ghs:h:",["help"])[0]
+    except getopt.GetoptError:
+        print(main.__doc__)
+        sys.exit(2)
+    
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            print(main.__doc__)
+            sys.exit()
+    ff.clean_csv()
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

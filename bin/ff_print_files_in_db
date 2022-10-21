@@ -23,8 +23,33 @@ import warnings
 import json
 warnings.filterwarnings('ignore')
 
-figure_db = ff.load_figure_db()
-fig_path_list = [figure_db[i]['path'] for i in range(len(figure_db))]    
-print('PRINTING ALL FIGURES IN THE DB')
-for i in fig_path_list:
-    print(i)
+def main(argv):
+
+    """
+---------------------------------------------------------------------------------------------------
+ff_print_files_in_db
+
+Usage:
+    CLI - prints a list of every figure stored in the figure csv database 
+
+---------------------------------------------------------------------------------------------------
+"""
+    try:
+        opts = getopt.getopt(argv,"ghs:h:",["help"])[0]
+    except getopt.GetoptError:
+        print(main.__doc__)
+        sys.exit(2)
+    
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            print(main.__doc__)
+            sys.exit()
+    
+    figure_db = ff.load_figure_db()
+    fig_path_list = [figure_db[i]['path'] for i in range(len(figure_db))]    
+    print('PRINTING ALL FIGURES IN THE DB')
+    for i in fig_path_list:
+        print(i)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

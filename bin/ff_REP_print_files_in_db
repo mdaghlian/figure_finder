@@ -23,8 +23,33 @@ import warnings
 import json
 warnings.filterwarnings('ignore')
 
-report_db = ff.REP_load_report_db()
-rep_path_list = [report_db[i]['file_path'] for i in range(len(report_db))]    
-print('PRINTING ALL REPORTS IN THE DB')
-for i in rep_path_list:
-    print(i)
+def main(argv):
+
+    """
+---------------------------------------------------------------------------------------------------
+ff_print_files_in_db
+
+Usage:
+    CLI - prints a list of every *REPORT* stored in the report csv database 
+
+---------------------------------------------------------------------------------------------------
+"""
+    try:
+        opts = getopt.getopt(argv,"ghs:h:",["help"])[0]
+    except getopt.GetoptError:
+        print(main.__doc__)
+        sys.exit(2)
+    
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            print(main.__doc__)
+            sys.exit()
+
+    report_db = ff.REP_load_report_db()
+    rep_path_list = [report_db[i]['file_path'] for i in range(len(report_db))]    
+    print('PRINTING ALL REPORTS IN THE DB')
+    for i in rep_path_list:
+        print(i)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

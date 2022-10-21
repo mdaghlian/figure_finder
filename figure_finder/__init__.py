@@ -13,5 +13,4 @@ from .database_tools import *
 from .utils import *
 from .report_printer import *
 from .report_db_tools import *
-# Run the csv clean function
-# clean_csv()
+

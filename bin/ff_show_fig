@@ -30,8 +30,8 @@ def main(argv):
 ff_show_fig
 
 Usage:
-    ff_print_code [arguments] [options]
-    Prints the code used to generate the figure matching the search terms
+    ff_show_fig [arguments] [options]
+    Opens the svg figure matching the search terms (i.e., tags, exclusion etc.)
 
 Arguments:
     -t|--tag        can be a single word, or a list separated by commas (with no whitespace)           

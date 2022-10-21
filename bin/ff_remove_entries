@@ -30,15 +30,17 @@ def main(argv):
 ff_remove_entries
 
 Usage:
-    ff_cli [arguments] [options]
-    Deletes entries in csv database (and corresponding png/svg/txt files) which match the mattern
+    ff_remove_entries [arguments] [options]
+    Deletes entries in csv database (and corresponding png/svg/txt files) which match the pattern
 
 Arguments:
     -t|--tag        can be a single word, or a list separated by commas (with no whitespace)           
     -e|--exclude    can be a single word, or a list separated by commas (with no whitespace)           
 
 Example:
-    ff_remove_entries -t blah,bloop -e hello
+    ff_remove_entries -t blah,bloop -e hello 
+    # will delete all the figures which have the tags 'blah' and 'bloop', excluding those which 
+    # also have the tag 'hello'
 ---------------------------------------------------------------------------------------------------
 """
 
