@@ -92,6 +92,8 @@ class ReportMaker(object):
         
         if isinstance(path_or_fig, mpl.figure.Figure):
             fig_name = f'{self.file_name}_fig{self.num_figs:03d}'
+            print(fig_name)
+            print(path_or_fig)
             db_entry = save_fig_and_code_as_svg(
                 path_or_fig, 
                 fig_tags=[], 
@@ -99,6 +101,7 @@ class ReportMaker(object):
                 save_folder=self.img_path, 
                 fig_overwrite='o', 
                 return_db_entr=True)
+            print(db_entry)
             self.rep_tags += db_entry['tags']
             self.txt_doc += f'\n<img src="{opj(self.img_path, fig_name+".svg")}" >'
             self.num_figs += 1

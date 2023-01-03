@@ -347,7 +347,7 @@ def get_figure_name(fig, fig_name, fig_date):
     
     return fig_name
 
-def save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_dump, return_db_entry=False, **kwargs):
+def save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_dump, return_db_entry=True, **kwargs):
     '''save_fig_and_code_as_svg
     What it says on the tin 
     Parameters
