@@ -61,6 +61,8 @@ def remove_csv_entries(fig_names2remove):
     return None
 
 def sanitise_string(s):
+    if not isinstance(s,str):
+        s = str(s)
     # Replace '=' with 'eq'
     s = s.replace('=', '-eq-')
     

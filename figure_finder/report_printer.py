@@ -8,6 +8,9 @@ import re
 import string 
 import random 
 
+import logging
+from contextlib import contextmanager
+
 # MATPLOTLIB STUFF
 import matplotlib as mpl
 import pandas as pd
@@ -31,13 +34,14 @@ class ReportMaker(object):
 
         Constructor for report maker.
 
-        """
+        """                
         self.file_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         self.file_name = file_name
         self.file_path = os.path.abspath(opj(file_path, file_name))
         self.html_path = os.path.abspath(opj(self.file_path, file_name+'.html')) 
         self.img_path = os.path.abspath(opj(self.file_path, 'images'))
         self.rep_tags = rep_tags
+
         # -> add the report name to rep tags
         self.rep_tags += self.file_name.split('_')
         self.num_figs = 0
@@ -92,7 +96,28 @@ class ReportMaker(object):
         # Start txt document
         self.txt_doc = '<!DOCTYPE html>\n<html>\n<body>\n'
 
+    # *** LOGGING ***
+    def __enter__(self):
+
+        self.old_stdout = sys.stdout
+        
+        self.log_file = open(opj(self.file_path, 'report.log'), 'w') 
+        sys.stdout = self.log_file
+
+    def __exit__(self,exc_type, exc_val, exc_tb):
+
+        if exc_val:
+            self.add_title('***ERROR***')
+            self.add_text(exc_type.__name__)                                    # type
+            self.add_text(f'In file: {exc_tb.tb_frame.f_code.co_filename}')     # filename
+            self.add_text(f'At line: {exc_tb.tb_lineno}')                       # lineno
+
+        sys.stdout = self.old_stdout
+        self.log_file.close()
+        self.save_html()
+
     def add_title(self, text, level=1):
+        print(text)
         self.txt_doc += f'\n<h{level}>\n{text}\n</h{level}>\n'
         # Add text to tags...
         self.rep_tags += sanitise_string(text).split('_')
@@ -102,6 +127,7 @@ class ReportMaker(object):
         Add text to string 
         """
         # scipy fftconvolve does not have padding options so doing it manually
+        print(text)
         self.txt_doc += f'\n<p>{text}</p>\n'
         self.rep_tags += sanitise_string(text).split('_')
     
