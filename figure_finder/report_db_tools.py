@@ -141,6 +141,7 @@ def REP_add_rep_to_db(ff_Rep_object):
         'html_path' : ff_Rep_object.html_path,
         'rep_tags' : rep_tags,
         'num_figs' : ff_Rep_object.num_figs,
+        'report_id': ff_Rep_object.report_id,
     }
 
     # Load csv...

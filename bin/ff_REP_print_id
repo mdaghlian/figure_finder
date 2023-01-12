@@ -27,15 +27,17 @@ def main(argv):
 
     """
 ---------------------------------------------------------------------------------------------------
-ff_print_files_in_db
+ff_print_id
 
 Usage:
-    CLI - prints a list of every figure stored in the figure csv database 
+    CLI - prints the name of a report id  
 
 ---------------------------------------------------------------------------------------------------
 """
+    rep_id     = []
+
     try:
-        opts = getopt.getopt(argv,"ghs:h:",["help"])[0]
+        opts = getopt.getopt(argv,"ghs:i:",["help", "rep_id="])[0]
     except getopt.GetoptError:
         print(main.__doc__)
         sys.exit(2)
@@ -44,12 +46,22 @@ Usage:
         if opt in ('-h', '--help'):
             print(main.__doc__)
             sys.exit()
-    
-    figure_db = ff.load_figure_db()
-    fig_path_list = [figure_db[i]['path'] for i in range(len(figure_db))]    
-    print('PRINTING ALL FIGURES IN THE DB')
-    for i in fig_path_list:
-        print(i)
+        elif opt in ("-i", "--rep_id"):
+            rep_id = arg
+
+    report_db = ff.REP_load_report_db()
+    rep_name_list = [report_db[i]['file_name'] for i in range(len(report_db))]
+    rep_id_list = [report_db[i]['report_id'] for i in range(len(report_db))]
+    if rep_id==[]:
+        print('PRINTING ALL REPORTS IN THE DB')
+        for i in range(len(rep_name_list)):
+            print(f'{rep_id_list[i]}: {rep_name_list[i]}')
+    else:
+        try:
+            idx = rep_id_list.index(rep_id)
+            print(f'{rep_id_list[idx]}: {rep_name_list[idx]}')
+        except ValueError:
+            print(f'Error: Could not find a report with id {rep_id}')        
 
 if __name__ == "__main__":
     main(sys.argv[1:])

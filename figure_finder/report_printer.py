@@ -5,13 +5,15 @@ from datetime import datetime
 import numpy as np
 import sys
 import re
+import string 
+import random 
 
 # MATPLOTLIB STUFF
 import matplotlib as mpl
 import pandas as pd
 
-from .database_tools import save_fig_and_code_as_svg
-from .report_db_tools import REP_remove_csv_entries, REP_add_rep_to_db
+from .database_tools import save_fig_and_code_as_svg, get_figure_name, sanitise_string
+from .report_db_tools import REP_remove_csv_entries, REP_add_rep_to_db, REP_load_report_db
 
 with open(opj(os.path.dirname(os.path.realpath(__file__)), 'figure_dump_dir.txt')) as f:
     figure_dump = f.read().splitlines()[0]
@@ -36,6 +38,8 @@ class ReportMaker(object):
         self.html_path = os.path.abspath(opj(self.file_path, file_name+'.html')) 
         self.img_path = os.path.abspath(opj(self.file_path, 'images'))
         self.rep_tags = rep_tags
+        # -> add the report name to rep tags
+        self.rep_tags += self.file_name.split('_')
         self.num_figs = 0
 
         if os.path.exists(self.file_path):
@@ -69,6 +73,16 @@ class ReportMaker(object):
                 self.img_path = os.path.abspath(opj(self.file_path, 'images'))
                 self.num_figs = 0                
         
+        # Create report id 
+        REP_db = REP_load_report_db()
+        list_of_existing_ids = [REP_db[i]['report_id'] for i in range(len(REP_db))]
+        letters = string.ascii_letters
+        string_length = 6
+        new_rep_id = ''.join(random.choice(letters) for i in range(string_length))
+        while new_rep_id in list_of_existing_ids:
+            new_rep_id = ''.join(random.choice(letters) for i in range(string_length))
+        self.report_id = new_rep_id
+
         if not os.path.exists(self.file_path):
             print('Making folder')
             os.mkdir(self.file_path)
@@ -80,6 +94,8 @@ class ReportMaker(object):
 
     def add_title(self, text, level=1):
         self.txt_doc += f'\n<h{level}>\n{text}\n</h{level}>\n'
+        # Add text to tags...
+        self.rep_tags += sanitise_string(text).split('_')
 
     def add_text(self, text):
         """
@@ -87,16 +103,18 @@ class ReportMaker(object):
         """
         # scipy fftconvolve does not have padding options so doing it manually
         self.txt_doc += f'\n<p>{text}</p>\n'
+        self.rep_tags += sanitise_string(text).split('_')
     
     def add_img(self, path_or_fig, fig_tags=[]):
         
         if isinstance(path_or_fig, mpl.figure.Figure):
-            fig_name = f'{self.file_name}_fig{self.num_figs:03d}'
+            extracted_fig_name = get_figure_name(path_or_fig, '', '')            
+            fig_name = f'{self.report_id}_fig{self.num_figs:03d}_{extracted_fig_name}'
             print(fig_name)
             print(path_or_fig)
             db_entry = save_fig_and_code_as_svg(
                 path_or_fig, 
-                fig_tags=[], 
+                fig_tags=[self.file_name], # Add report name to fig tags
                 fig_name=fig_name, 
                 save_folder=self.img_path, 
                 fig_overwrite='o', 

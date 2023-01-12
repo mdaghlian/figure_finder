@@ -84,15 +84,13 @@ Example:
             print(f'{i:03}, {this_name}')
         
         return # EXIT FUNCTION
-    if idx!=[]:
-        match_rep_path = match_rep_path[idx]
-        match_rep_name = match_rep_name[idx]
-    else:
-        match_rep_path = match_rep_path[0]
-        match_rep_name = match_rep_name[0]
-
-    print('Opening - {match_rep_name}')
-    os.system(f'firefox {match_rep_path} &')
+    if isinstance(idx,int):
+        match_rep_path = [match_rep_path[idx]]
+        match_rep_name = [match_rep_name[idx]]
+    
+    for i in range(len(match_rep_name)): 
+        print('Opening - {match_rep_name[i]}')
+        os.system(f'firefox {match_rep_path[i]} &')
 
     return
     

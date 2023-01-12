@@ -60,6 +60,20 @@ def remove_csv_entries(fig_names2remove):
     save_figure_db(new_figure_db)
     return None
 
+def sanitise_string(s):
+    # Replace '=' with 'eq'
+    s = s.replace('=', '-eq-')
+    
+    # Replace all other non-alphanumeric characters with '_'
+    # The regular expression '[^a-zA-Z0-9-]' matches any character that is not
+    # a letter, digit, or '-'.
+    s = re.sub(r'[^a-zA-Z0-9-]', '_', s)
+    
+    # Remove consecutive '_' characters
+    s = re.sub(r'_{2,}', '_', s)
+    
+    return s
+
 def listish_str_to_list(listish_str):
     '''listish_str_to_list
     
@@ -344,7 +358,7 @@ def get_figure_name(fig, fig_name, fig_date):
     if fig_name=='':
         # Still not found an id...
         fig_name = f"random_{fig_date}"
-    
+    fig_name = sanitise_string(fig_name)
     return fig_name
 
 def save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_dump, return_db_entry=True, **kwargs):

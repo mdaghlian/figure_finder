@@ -1,0 +1,117 @@
+#!/usr/bin/env python
+#$ -j Y
+#$ -cwd
+#$ -V
+
+
+import os
+opj = os.path.join
+from datetime import datetime
+import numpy as np
+import sys
+
+# MATPLOTLIB STUFF
+import matplotlib as mpl
+
+import pandas as pd
+#
+import figure_finder as ff
+
+import ast
+import getopt
+import warnings
+import json
+warnings.filterwarnings('ignore')
+
+def main(argv):
+
+    """
+---------------------------------------------------------------------------------------------------
+ff_REP_print_db_property
+
+Usage:    
+    Prints the specified properties for a db entry    
+    Prints all the tags associated with a *FIGURE* matching the search terms
+
+Arguments:
+    -p|--props       can be a single word, or a list separated by commas (with no whitespace)           
+        >> file_date
+        >> file_name
+        >> file_path
+        >> html_path
+        >> rep_tags
+        >> num_figs
+        >> report_id    
+    -t|--tag        can be a single word, or a list separated by commas (with no whitespace)           
+    -e|--exclude    can be a single word, or a list separated by commas (with no whitespace)           
+    -i|--idx        if multiple figures match the pattern, select this figure    
+
+Example:
+---------------------------------------------------------------------------------------------------
+"""
+    props       = None
+    rep_tags    = ''
+    exclude     = None
+    idx         = []
+
+    try:
+        opts = getopt.getopt(argv,"ghs:p:t:e:i:",["help", "props=", "tag=", "exclude=", "idx="])[0]
+    except getopt.GetoptError:
+        print(main.__doc__)
+        sys.exit(2)
+    
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            print(main.__doc__)
+            sys.exit()
+        elif opt in ("-p", "--props"):
+            props = arg.split(',')
+            if not isinstance(props, list):
+                props = [props]
+        elif opt in ("-t", "--tag"):
+            rep_tags = arg.split(',')
+        elif opt in ("-e", "--exclude"):
+            exclude = arg.split(',')
+        elif opt in ("-i", "--idx"):
+            idx = int(arg)
+    rep_db_match = ff.REP_find_rep_with_tags(rep_tags, exclude=exclude)
+    # *** GET ALL MATCHING PROPERTIES
+    MATCH_prop = {}
+    MATCH_prop['file_date']     = [rep_db_match[i]['file_date'] for i in range(len(rep_db_match))]
+    MATCH_prop['file_name']     = [rep_db_match[i]['file_name'] for i in range(len(rep_db_match))]
+    MATCH_prop['file_path']     = [rep_db_match[i]['file_path'] for i in range(len(rep_db_match))]
+    MATCH_prop['html_path']     = [rep_db_match[i]['html_path'] for i in range(len(rep_db_match))]
+    MATCH_prop['rep_tags']      = [rep_db_match[i]['rep_tags'] for i in range(len(rep_db_match))]
+    MATCH_prop['num_figs']      = [rep_db_match[i]['num_figs'] for i in range(len(rep_db_match))]
+    MATCH_prop['report_id']     = [rep_db_match[i]['report_id'] for i in range(len(rep_db_match))]        
+    
+    match_rep_name = MATCH_prop['file_name']
+    match_rep_tags = MATCH_prop['rep_tags']
+
+    if (len(match_rep_name)>1) & (idx==[]):
+        print('More than 1 reports match the description')
+        print('Be more specific or select the file, using idx=X, (or -i X)')
+        print('Files found include:')
+        
+    if idx!=[]:
+        MATCH_prop['file_date']  = MATCH_prop['file_date'][idx]
+        MATCH_prop['file_name']  = MATCH_prop['file_name'][idx]
+        MATCH_prop['file_path']  = MATCH_prop['file_path'][idx]
+        MATCH_prop['html_path']  = MATCH_prop['html_path'][idx]
+        MATCH_prop['rep_tags']   = MATCH_prop['rep_tags'][idx]
+        MATCH_prop['num_figs']   = MATCH_prop['num_figs'][idx]
+        MATCH_prop['report_id']  = MATCH_prop['report_id'][idx]        
+        match_rep_tags = match_rep_tags[idx]
+        match_rep_name = match_rep_name[idx]
+
+    for i_entry in range(len(match_rep_name)):
+        this_str = ''
+        for i_prop in props:
+            this_str += f'| {MATCH_prop[i_prop][i_entry]}'
+
+        print(f'{i_entry:03}, {this_str}')
+
+    return
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
