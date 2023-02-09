@@ -11,7 +11,7 @@ import re
 import matplotlib as mpl
 import pandas as pd
 
-from .database_tools import listish_str_to_list, check_string_for_substring
+from .database_tools import listish_str_to_list, check_string_for_substring, clean_csv
 
 with open(opj(os.path.dirname(os.path.realpath(__file__)), 'figure_dump_dir.txt')) as f:
     report_dump = f.read().splitlines()[0]
@@ -19,6 +19,7 @@ rep_tag_file = opj(report_dump, 'rep_tag_file.csv')
 report_dump_bin = opj(report_dump, 'recycle_bin')
 
 def REP_remove_csv_entries(rep_names2remove):
+    print(rep_names2remove)
     if isinstance(rep_names2remove, str):
         rep_names2remove = [rep_names2remove]        
 
@@ -192,4 +193,6 @@ def REP_clean_csv():
         new_report_db += [report_db[i]]
 
     REP_save_report_db(new_report_db)
+    # Now clean figure database
+    clean_csv()
     return  

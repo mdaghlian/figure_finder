@@ -29,7 +29,7 @@ class ReportMaker(object):
     Class that takes care of generating grids for pRF fitting and simulations
     """
 
-    def __init__(self, file_name, file_path, report_overwrite='o', rep_tags=[]):
+    def __init__(self, file_name, file_path, report_overwrite='o', rep_tags=[], open_html=True):
         """__init__
 
         Constructor for report maker.
@@ -41,6 +41,7 @@ class ReportMaker(object):
         self.html_path = os.path.abspath(opj(self.file_path, file_name+'.html')) 
         self.img_path = os.path.abspath(opj(self.file_path, 'images'))
         self.rep_tags = rep_tags
+        self.open_html = open_html
 
         # -> add the report name to rep tags
         self.rep_tags += self.file_name.split('_')
@@ -96,7 +97,9 @@ class ReportMaker(object):
         # Start txt document
         self.txt_doc = '<!DOCTYPE html>\n<html>\n<body>\n'
 
-    # *** LOGGING ***
+    # *********************************************************************
+    # ****************************** LOGGING ******************************
+    # *********************************************************************
     def __enter__(self):
 
         self.old_stdout = sys.stdout
@@ -115,6 +118,12 @@ class ReportMaker(object):
         sys.stdout = self.old_stdout
         self.log_file.close()
         self.save_html()
+
+        if self.open_html:
+            os.system(f'firefox {self.html_path}')
+    # *********************************************************************
+    # ****************************** LOGGING ******************************
+    # *********************************************************************        
 
     def add_title(self, text, level=1):
         print(text)
@@ -147,7 +156,7 @@ class ReportMaker(object):
                 return_db_entr=True)
             print(db_entry)
             self.rep_tags += db_entry['tags']
-            self.txt_doc += f'\n<img src="{opj(self.img_path, fig_name+".svg")}" >'
+            self.txt_doc += f'\n<img src="{opj("./images", fig_name+".svg")}" >'
             self.num_figs += 1
         else:
             self.txt_doc += f'\n<img src="{path_or_fig}" >\n'

@@ -89,7 +89,7 @@ Example:
         match_rep_name = [match_rep_name[idx]]
     
     for i in range(len(match_rep_name)): 
-        print('Opening - {match_rep_name[i]}')
+        print(f'Opening - {match_rep_name[i]}')
         os.system(f'firefox {match_rep_path[i]} &')
 
     return
