@@ -73,6 +73,9 @@ def sanitise_string(s):
     
     # Remove consecutive '_' characters
     s = re.sub(r'_{2,}', '_', s)
+
+    # Remove consecutive '-' characters 
+    s = re.sub(r'-{2,}', '-', s)
     
     return s
 

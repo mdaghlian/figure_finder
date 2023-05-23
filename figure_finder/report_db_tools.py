@@ -70,6 +70,7 @@ def REP_load_report_db():
 
 def REP_save_report_db(report_db):
     df = pd.DataFrame(report_db)
+    df = df.sort_values('file_name')
     df.to_csv(rep_tag_file, index=False)
 
     return None

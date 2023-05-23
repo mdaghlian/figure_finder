@@ -23,10 +23,10 @@ with open(opj(os.path.dirname(os.path.realpath(__file__)), 'figure_dump_dir.txt'
 csv_tag_file = opj(figure_dump, 'csv_tag_file.csv')
 figure_dump_bin = opj(figure_dump, 'recycle_bin')
 
-class ReportMaker(object):
-    """
+class ReportCollator(object):
+    """Model
 
-    Class that helps print reports to html, and save them in the ff database
+    
     """
 
     def __init__(self, file_name, file_path, report_overwrite='o', rep_tags=[], open_html=True):
