@@ -11,12 +11,12 @@ import re
 import matplotlib as mpl
 import pandas as pd
 
-from .database_tools import listish_str_to_list, check_string_for_substring, clean_csv
+from .figure_db_tools import listish_str_to_list, check_string_for_substring, FIG_clean_csv
 
-with open(opj(os.path.dirname(os.path.realpath(__file__)), 'figure_dump_dir.txt')) as f:
-    report_dump = f.read().splitlines()[0]
-rep_tag_file = opj(report_dump, 'rep_tag_file.csv')
-report_dump_bin = opj(report_dump, 'recycle_bin')
+# Get the directory where the databases (figure, and report) are stored as csvs 
+report_dump = os.environ['FIG_DUMP']
+rep_tag_file = opj(report_dump, 'rep_tag_file.csv') 
+report_dump_bin = opj(report_dump, 'recycle_bin')   
 
 def REP_remove_csv_entries(rep_names2remove):
     print(rep_names2remove)
@@ -70,7 +70,8 @@ def REP_load_report_db():
 
 def REP_save_report_db(report_db):
     df = pd.DataFrame(report_db)
-    df = df.sort_values('file_name')
+    if len(df) != 0:
+        df = df.sort_values('file_name')
     df.to_csv(rep_tag_file, index=False)
 
     return None
@@ -195,5 +196,5 @@ def REP_clean_csv():
 
     REP_save_report_db(new_report_db)
     # Now clean figure database
-    clean_csv()
+    FIG_clean_csv()
     return  

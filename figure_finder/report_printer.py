@@ -15,13 +15,8 @@ from contextlib import contextmanager
 import matplotlib as mpl
 import pandas as pd
 
-from .database_tools import save_fig_and_code_as_svg, get_figure_name, sanitise_string
+from .figure_db_tools import FIG_save_fig_and_code_as_svg, FIG_get_figure_name, sanitise_string
 from .report_db_tools import REP_remove_csv_entries, REP_add_rep_to_db, REP_load_report_db
-
-with open(opj(os.path.dirname(os.path.realpath(__file__)), 'figure_dump_dir.txt')) as f:
-    figure_dump = f.read().splitlines()[0]
-csv_tag_file = opj(figure_dump, 'csv_tag_file.csv')
-figure_dump_bin = opj(figure_dump, 'recycle_bin')
 
 class ReportMaker(object):
     """
@@ -143,11 +138,11 @@ class ReportMaker(object):
     def add_img(self, path_or_fig, fig_tags=[]):
         
         if isinstance(path_or_fig, mpl.figure.Figure):
-            extracted_fig_name = get_figure_name(path_or_fig, '', '')            
+            extracted_fig_name = FIG_get_figure_name(path_or_fig, '', '')            
             fig_name = f'{self.report_id}_fig{self.num_figs:03d}_{extracted_fig_name}'
             print(fig_name)
             print(path_or_fig)
-            db_entry = save_fig_and_code_as_svg(
+            db_entry = FIG_save_fig_and_code_as_svg(
                 path_or_fig, 
                 fig_tags=[self.file_name], # Add report name to fig tags
                 fig_name=fig_name, 

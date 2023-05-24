@@ -17,4 +17,4 @@ fig.suptitle('Something else')
 # scrape these to include in the tags (so don't worry too much)
 # Figure name & the date will also be saved as tags
 # >> First we will save this to our local folder 
-ff.save_fig_and_code_as_svg(fig, fig_name='scatter-demo', fig_tags=['optional-tags'], save_folder=os.getcwd())
+ff.FIG_save_fig_and_code_as_svg(fig, fig_name='scatter-demo', fig_tags=['optional-tags'], save_folder=os.getcwd())

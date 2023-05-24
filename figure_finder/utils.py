@@ -10,17 +10,12 @@ import sys
 import matplotlib as mpl
 import pandas as pd
 
-from .database_tools import find_fig_with_tags
+from .figure_db_tools import FIG_find_fig_with_tags
 
-with open(opj(os.path.dirname(os.path.realpath(__file__)), 'figure_dump_dir.txt')) as f:
-    figure_dump = f.read().splitlines()[0]
-csv_tag_file = opj(figure_dump, 'csv_tag_file.csv')
-figure_dump_bin = opj(figure_dump, 'recycle_bin')
-
-
+figure_dump = os.environ['FIG_DUMP']
 
 def print_matching_code_file(fig_tags, fig_name=[], exclude=None, save_folder=figure_dump, idx=[]):
-    fig_db_match = find_fig_with_tags(fig_tags, fig_name=fig_name, exclude=exclude)
+    fig_db_match = FIG_find_fig_with_tags(fig_tags, fig_name=fig_name, exclude=exclude)
     match_fig_path = [fig_db_match[i]['path'] for i in range(len(fig_db_match))]
     match_fig_name = [fig_db_match[i]['name'] for i in range(len(fig_db_match))]
     
@@ -56,7 +51,7 @@ def print_matching_code_file(fig_tags, fig_name=[], exclude=None, save_folder=fi
     return None
 
 def show_fig_with_tags(fig_tags, fig_name=[], exclude=None, save_folder=figure_dump, idx=[]):
-    fig_db_match = find_fig_with_tags(fig_tags, fig_name=fig_name, exclude=exclude)
+    fig_db_match = FIG_find_fig_with_tags(fig_tags, fig_name=fig_name, exclude=exclude)
     match_fig_path = [fig_db_match[i]['path'] for i in range(len(fig_db_match))]
     match_fig_name = [fig_db_match[i]['name'] for i in range(len(fig_db_match))]
 

@@ -15,21 +15,16 @@ from contextlib import contextmanager
 import matplotlib as mpl
 import pandas as pd
 
-from .database_tools import save_fig_and_code_as_svg, get_figure_name, sanitise_string
-from .report_db_tools import REP_remove_csv_entries, REP_add_rep_to_db, REP_load_report_db
-
-with open(opj(os.path.dirname(os.path.realpath(__file__)), 'figure_dump_dir.txt')) as f:
-    figure_dump = f.read().splitlines()[0]
-csv_tag_file = opj(figure_dump, 'csv_tag_file.csv')
-figure_dump_bin = opj(figure_dump, 'recycle_bin')
+from .figure_db_tools import sanitise_string, check_string_for_substring
+from .report_db_tools import REP_remove_csv_entries, REP_add_rep_to_db, REP_load_report_db, REP_find_rep_with_tags
 
 class ReportCollator(object):
-    """Model
-
+    """
+    Class which collates from a set of reports: pulling the 
     
     """
 
-    def __init__(self, file_name, file_path, report_overwrite='o', rep_tags=[], open_html=True):
+    def __init__(self, file_name, file_path, report_overwrite='o', tags_incl=[], tags_excl=[], open_html=True):
         """__init__
 
         Constructor for report maker.
@@ -40,7 +35,10 @@ class ReportCollator(object):
         self.file_path = os.path.abspath(opj(file_path, file_name))
         self.html_path = os.path.abspath(opj(self.file_path, file_name+'.html')) 
         self.img_path = os.path.abspath(opj(self.file_path, 'images'))
-        self.rep_tags = rep_tags
+        self.tags_incl = tags_incl
+        self.tags_excl = tags_excl + ['collated']
+        self.rep_tags = []
+        self.rep_tags += ['collated']
         self.open_html = open_html
 
         # -> add the report name to rep tags
@@ -96,7 +94,7 @@ class ReportCollator(object):
                 
         # Start txt document
         self.txt_doc = '<!DOCTYPE html>\n<html>\n<body>\n'
-
+        self.add_title(self.file_name)
     # *********************************************************************
     # ****************************** LOGGING ******************************
     # *********************************************************************
@@ -131,36 +129,46 @@ class ReportCollator(object):
         # Add text to tags...
         self.rep_tags += sanitise_string(text).split('_')
 
-    def add_text(self, text):
+    def add_text(self, text, font_size=None):
         """
         Add text to string 
         """
         # scipy fftconvolve does not have padding options so doing it manually
         print(text)
+        if font_size is not None:
+            self.txt_doc += f'\n<p style="font-size:{font_size}px;>{text}</p>\n'    
         self.txt_doc += f'\n<p>{text}</p>\n'
         self.rep_tags += sanitise_string(text).split('_')
-    
-    def add_img(self, path_or_fig, fig_tags=[]):
+
+    def begin_collation(self, **kwargs):
+        # img_order = kwargs.get('image_order', 'REP') # REP or fig
+
+        # Get the name of matching reports:
+        print(self.tags_incl)
+        rep_match = REP_find_rep_with_tags(rep_tags=self.tags_incl, exclude=self.tags_excl)
+        self.add_text(f'Collating from {[this_rep["file_name"] for this_rep in rep_match]}')
+        # find the max number of figures:
+        n_figs = [this_rep['num_figs'] for this_rep in rep_match]
+        max_n_figs = np.max(n_figs)
         
-        if isinstance(path_or_fig, mpl.figure.Figure):
-            extracted_fig_name = get_figure_name(path_or_fig, '', '')            
-            fig_name = f'{self.report_id}_fig{self.num_figs:03d}_{extracted_fig_name}'
-            print(fig_name)
-            print(path_or_fig)
-            db_entry = save_fig_and_code_as_svg(
-                path_or_fig, 
-                fig_tags=[self.file_name], # Add report name to fig tags
-                fig_name=fig_name, 
-                save_folder=self.img_path, 
-                fig_overwrite='o', 
-                return_db_entr=True)
-            print(db_entry)
-            self.rep_tags += db_entry['tags']
-            self.txt_doc += f'\n<img src="{opj("./images", fig_name+".svg")}" >'
-            self.num_figs += 1
-        else:
-            self.txt_doc += f'\n<img src="{path_or_fig}" >\n'
-            self.num_figs += 1
+        for i_fig in range(max_n_figs):
+            self.add_title(f'fig{i_fig:03}', level=2)
+            for this_rep in rep_match:
+                this_img_path = opj(this_rep['file_path'], 'images')                
+                this_img_list = os.listdir(this_img_path)
+                this_img_id = list(check_string_for_substring(filt=[f'fig{i_fig:03}', '.svg'], str2check=this_img_list))[0]
+                self.add_text(f'fig{i_fig:03}, {this_rep["file_name"]}')                
+                this_img_name = this_img_list[this_img_id]
+                this_new_path = opj(self.img_path, this_img_name)
+                os.system(f'cp {opj(this_img_path, this_img_name)} {this_new_path}')
+                self.txt_doc += f'\n<img src="{this_new_path}" >\n'
+                self.num_figs += 1
+
+            
+        # if img_order=='REP':
+            # 
+        
+        return
     
     def save_html(self):
         self.txt_doc += '\n</body>\n</html>'

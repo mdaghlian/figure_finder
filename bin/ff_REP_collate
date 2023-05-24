@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+#$ -j Y
+#$ -cwd
+#$ -V
+
+
+import os
+opj = os.path.join
+from datetime import datetime
+import numpy as np
+import sys
+
+# MATPLOTLIB STUFF
+import matplotlib as mpl
+
+import pandas as pd
+#
+import figure_finder as ff
+
+import ast
+import getopt
+import warnings
+import json
+warnings.filterwarnings('ignore')
+
+def main(argv):
+
+    """
+---------------------------------------------------------------------------------------------------
+ff_REP_collate
+
+Usage:
+    ff_REP_collate [arguments] [options]
+    Take the selected documents and collate them...
+
+Arguments:
+    -n|--name       name for collated report
+    -t|--tag        can be a single word, or a list separated by commas (with no whitespace)           
+    -e|--exclude    can be a single word, or a list separated by commas (with no whitespace)           
+    --auto          automatically collate (skips the ask question bit)
+    --dont_open     dont open html
+Example:
+    ff_REP_collate -n sub-06-col -t blah,bloop -e hello
+
+---------------------------------------------------------------------------------------------------
+"""
+    name = None
+    rep_tags    = None
+    exclude     = []
+    auto_col    = False
+    open_html   = True
+    try:
+        opts = getopt.getopt(argv,"ghs:t:e:n:",["help", "tag=", "exclude=", "auto=", "name=", "dont_open"])[0]
+    except getopt.GetoptError:
+        print(main.__doc__)
+        sys.exit(2)
+    
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            print(main.__doc__)
+            sys.exit()
+        elif opt in ("-n", "--name"):
+            name = arg
+        elif opt in ("-t", "--tag"):
+            rep_tags = arg.split(',')
+        elif opt in ("-e", "--exclude"):
+            exclude = arg.split(',')
+        elif opt in ("--auto"):
+            auto_col = True  
+        elif opt in ("--dont_open"):
+            open_html = False
+    
+    exclude += ['collated']
+    rep_db_match = ff.REP_find_rep_with_tags(rep_tags, exclude=exclude)
+    match_rep_name = [rep_db_match[i]['file_name'] for i in range(len(rep_db_match))]
+    match_rep_path = [rep_db_match[i]['html_path'] for i in range(len(rep_db_match))]
+    
+    path_to_use = os.path.dirname(os.path.realpath(rep_db_match[0]['file_path']))
+    print('Files to collate include:')
+    for i,this_name in enumerate(match_rep_name):
+        print(f'{i:03}, {this_name}')
+    
+    if not auto_col:
+        print(f'Continue with collation?')
+        collate_yn = input()
+        if collate_yn!='y':
+            print('Cancelling')
+            return
+    # Use location of report 0
+    rep_col = ff.ReportCollator(
+        file_name=name, file_path=path_to_use, tags_incl=rep_tags, tags_excl=exclude, open_html=open_html)
+
+    with rep_col:
+        date_now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        rep_col.add_title(f'Collation, generated at {date_now}')
+        rep_col.begin_collation()
+
+    return
+    
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
