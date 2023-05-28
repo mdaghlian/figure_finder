@@ -202,10 +202,10 @@ def FIG_load_figure_db():
                 figure_db['tags'][i] = listish_str_to_list(figure_db['tags'][i])
         except:
             # If all entries have been deleted - reload as empty dict
-            figure_db = []                
+            figure_db = pd.DataFrame([])
             
     else: 
-        figure_db = []    
+        figure_db = pd.DataFrame([])
     
     return figure_db
 
@@ -609,39 +609,28 @@ def FIG_clean_csv():
     return  
 
 
+def FIG_show_fig_with_tags(fig_tags, fig_name=[], exclude=None, idx=[]):
+    fig_db_match = FIG_find_fig_with_tags(fig_tags, fig_name=fig_name, exclude=exclude)
+    if len(fig_db_match)>1:
+        if idx==[]:
+            print('More than 1 figs match the description')
+            print('Be more specific or select the file, using idx=X (or -i X)')
+            print('Files found include:')
+            for i,this_name in enumerate(fig_db_match.name):
+                print(f'{i:03}, {this_name}')
+        elif idx=='all':
+            for i,this_path in enumerate(fig_db_match.path):
+                print(f'Opening {fig_db_match.name[i]}')
+                os.system(f'eog {this_path}.svg & ')
 
+        else:
+            print(f'Opening {fig_db_match.name[idx]}')
+            os.system(f'eog {fig_db_match.path[idx]}.svg & ')
 
+    else:
+        for i,this_path in enumerate(fig_db_match.path):
+            print(f'Opening {fig_db_match.name[i]}')
+            os.system(f'eog {this_path}.svg & ')
+        
 
-# def clean_csv():
-#     if not os.path.exists(fig_tag_file):
-#         print('Figure finder: NO CSV FILE')
-#         return
-#     figure_db = load_figure_db()
-#     if figure_db==[]:
-#         print('Figure finder: Database is empty')
-#         return
-
-#     fig_name_list = [figure_db[i]['name'] for i in range(len(figure_db))]     
-#     # [1] Create a backup
-#     back_up_name = 'backup_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.csv'
-#     back_up_file = opj(figure_dump_bin, back_up_name)
-#     os.system(f'cp {fig_tag_file} {back_up_file}')  
-#     # [2] Compare figures listed in the csv with figures listed in the folder...
-#     files_in_directory = sorted(os.listdir(figure_dump))
-#     entries_to_keep = []
-#     for i, this_fig in enumerate(fig_name_list):
-#         # check is there a png?
-#         is_png = this_fig+'.png' in files_in_directory
-#         is_svg = this_fig+'.svg' in files_in_directory
-#         is_img = is_png | is_svg
-#         if not is_img:
-#             print(f'Could not find {this_fig}, in dir')            
-#             print('Deleting...')
-#         else:
-#             entries_to_keep.append(i)
-#     new_figure_db = []
-#     for i in entries_to_keep:
-#         new_figure_db += [figure_db[i]]
-
-#     save_figure_db(new_figure_db)
-#     return    
+    return None

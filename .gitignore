@@ -2,3 +2,5 @@ z_untracked/*
 *.egg-info
 *.vscode
 *__pycache__
+*demo*
+*eg_*

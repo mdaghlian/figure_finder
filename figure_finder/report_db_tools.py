@@ -87,10 +87,10 @@ def REP_load_report_db():
                 report_db['tags'][i] = listish_str_to_list(report_db['tags'][i])
         except:
             # If all entries have been deleted - reload as empty dict
-            report_db = []                
+            report_db = pd.DataFrame([])
             
     else: 
-        report_db = []    
+        report_db = pd.DataFrame([])
     
     return report_db
 
@@ -198,7 +198,8 @@ def REP_find_rep_with_tags(rep_tags, rep_name=[], exclude=None):
 
     report_db_NAME_MATCH = report_db.loc[match_rep_names_idc].copy()
     # [1] Get a list of possible file paths, names, and turn the tags into one string
-    match_rep_tags = [' '.join(report_db[i]['tags']) for i in match_rep_names_idc]            
+    print(report_db_NAME_MATCH)
+    match_rep_tags = [' '.join(report_db['tags'][i]) for i in match_rep_names_idc]            
     match_idc = check_string_for_substring(filt=rep_tags, str2check=match_rep_tags, exclude=exclude)
     report_db_TAG_MATCH = report_db_NAME_MATCH.loc[match_idc].copy()
 
@@ -230,6 +231,18 @@ def REP_add_rep_to_db(ff_Rep_object):
     }    
     
     # Load csv...
+    report_db = REP_load_report_db()
+    # Check this report doesn't already exist
+    exist_in_db = False
+    for i_path in report_db.path:
+        if ff_Rep_object.path == i_path:
+            exist_in_db = True
+
+    if exist_in_db:
+        print('Overwriting existing db entry')
+        REP_remove_csv_entries(ff_Rep_object.name)
+    
+    # Reload
     report_db = REP_load_report_db()
     new_row = pd.DataFrame(this_pd_entry)
     new_report_db = pd.concat([new_row, report_db.loc[:]]).reset_index(drop=True)
@@ -279,3 +292,29 @@ def REP_clean_csv():
     # Now clean figure database
     FIG_clean_csv()
     return  
+
+def REP_show_REP_with_tags(rep_tags, rep_name=[], exclude=None, idx=[]):
+    rep_db_match = REP_find_rep_with_tags(rep_tags, rep_name=rep_name, exclude=exclude)
+    if len(rep_db_match)>1:
+        if idx==[]:
+            print('More than 1 reports match the description')
+            print('Be more specific or select the file, using idx=X (or -i X)')
+            print('Files found include:')
+            for i,this_name in enumerate(rep_db_match.name):
+                print(f'{i:03}, {this_name}')
+        elif idx=='all':
+            for i,this_path in enumerate(rep_db_match.html_path):
+                print(f'Opening {rep_db_match.name[i]}')
+                os.system(f'firefox {this_path} & ')
+
+        else:
+            print(f'Opening {rep_db_match.name[idx]}')
+            os.system(f'firefox {rep_db_match.html_path[idx]}.svg & ')
+
+    else:
+        for i,this_path in enumerate(rep_db_match.html_path):
+            print(f'Opening {rep_db_match.name[i]}')
+            os.system(f'firefox {this_path} & ')
+        
+
+    return None

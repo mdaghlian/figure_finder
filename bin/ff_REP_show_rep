@@ -27,23 +27,23 @@ def main(argv):
 
     """
 ---------------------------------------------------------------------------------------------------
-ff_REP_show_fig
+ff_REP_show_rep
 
 Usage:
-    ff_REP_show_fig [arguments] [options]
+    ff_REP_show_rep [arguments] [options]
     Opens the html files (using firefox), of the reports which match the input pattern (i.e., have 
     the correct tags)
 
 Arguments:
     -t|--tag        can be a single word, or a list separated by commas (with no whitespace)           
     -e|--exclude    can be a single word, or a list separated by commas (with no whitespace)           
-    -i|--idx        if multiple figures match the pattern, select this figure    
+    -i|--idx        if multiple reports match the pattern, select this report    
 
 Example:
-    ff_REP_show_fig -t blah,bloop -e hello
+    ff_REP_show_rep -t blah,bloop -e hello
     # if more than one file matches this pattern then you will get a list of file names with an 
     # associated id, use idx to specify which one you want
-    ff_REP_show_fig -t blah,bloop -e hello -i 0
+    ff_REP_show_rep -t blah,bloop -e hello -i 0
 
 ---------------------------------------------------------------------------------------------------
 """
@@ -72,25 +72,7 @@ Example:
             if idx!="all":
                 idx = int(arg)
     
-    rep_db_match = ff.REP_find_rep_with_tags(rep_tags, exclude=exclude)
-    match_rep_name = [rep_db_match[i]['file_name'] for i in range(len(rep_db_match))]
-    match_rep_path = [rep_db_match[i]['html_path'] for i in range(len(rep_db_match))]
-
-    if (len(match_rep_name)>1) & (idx==[]):
-        print('More than 1 reports match the description')
-        print('Be more specific or select the file, using idx=X, (or -i X)')
-        print('Files found include:')
-        for i,this_name in enumerate(match_rep_name):
-            print(f'{i:03}, {this_name}')
-        
-        return # EXIT FUNCTION
-    if isinstance(idx,int):
-        match_rep_path = [match_rep_path[idx]]
-        match_rep_name = [match_rep_name[idx]]
-    
-    for i in range(len(match_rep_name)): 
-        print(f'Opening - {match_rep_name[i]}')
-        os.system(f'firefox {match_rep_path[i]} &')
+    ff.REP_show_REP_with_tags(rep_tags, exclude=exclude, idx=idx)
 
     return
     

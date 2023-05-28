@@ -1,9 +1,9 @@
 # figure finder repository
-I often make many many figures, with lots of variations, across several notebooks. It is often difficult to find the desired figure, and when you do find it, it is useful to know when you made it and how you made it.
+This provides a way to generate html reports, which save figures as .svg files. Information about each figure and report is stored in a csv database.
 
-The motivation behind this package is to help with these issues. 
+You can easily find the figures or reports later using the search parameters and tags. In addition info about how and when the report was made is also saved.
 
-NB - At the moment - this only works with notebooks. (I run it in VScode)
+This makes it easier to reatedly run the same plotting procedure across subjects and conditions, and to store it all in an accessible way.
 
 Figures are saved as svg files. The package automatically extracts important information about the figure, including:
 
@@ -11,15 +11,13 @@ Figures are saved as svg files. The package automatically extracts important inf
 
 * The date
 
-* Code from the notebook cell which was used to make the figure
+* Code from the notebook cell which was used to make the figure (or python script)
 
 * The path to the notebook used to make the figure
 
 This information is then written to the figure svg file, inside the metadata component. It can be viewed by opening the svg with a text editor 
 
-By default all figures are saved to the "figure_dump" folder, but you can specify where you want the figures to go.
-
-A secondary function is that it creates a database of figures, using a csv / dict. You can then use the search functions and key words to find and display your figure as well as the accompanying metadata.  
+A secondary function is that it creates a database of figures, using a csv file and pandas. You can then use the search functions and key words to find and display your figure as well as the accompanying metadata.  
 
 The commands in /bin can be called from the command line from anywhere. They can be used to print the code for a figure
 

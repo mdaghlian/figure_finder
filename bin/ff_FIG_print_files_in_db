@@ -35,7 +35,7 @@ Usage:
 ---------------------------------------------------------------------------------------------------
 """
     try:
-        opts = getopt.getopt(argv,"qs:h:n:",["help","name"])[0]
+        opts = getopt.getopt(argv,"qs:h:",["help"])[0]
     except getopt.GetoptError:
         print(main.__doc__)
         sys.exit(2)
@@ -49,13 +49,11 @@ Usage:
             print_full_path = False
 
     figure_db = ff.FIG_load_figure_db()
-    if print_full_path:
-        print('PRINTING ALL FIGURES IN THE DB')
-        for i in figure_db.path:
-            print(i)
+    if len(figure_db)==0:
+        print('FIG db is empty')
     else:
         print('PRINTING ALL FIGURES IN THE DB')
-        for i in figure_db.name:
+        for i in figure_db.path:
             print(i)
 
 if __name__ == "__main__":

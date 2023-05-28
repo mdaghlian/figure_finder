@@ -70,7 +70,7 @@ Example:
             print(idx)
             if idx!="all":
                 idx = int(arg)
-    ff.show_fig_with_tags(fig_tags, exclude=exclude, idx=idx)
+    ff.FIG_show_fig_with_tags(fig_tags, exclude=exclude, idx=idx)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

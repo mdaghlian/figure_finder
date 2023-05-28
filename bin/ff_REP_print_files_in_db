@@ -45,10 +45,13 @@ Usage:
             print(main.__doc__)
             sys.exit()
 
-    report_db = ff.REP_load_report_db()
-    print('PRINTING ALL REPORTS IN THE DB')
-    for i in report_db.path:
-        print(i)
+    report_db = ff.REP_load_report_db()    
+    if len(report_db)==0:
+        print('REP db is empty')
+    else:        
+        print('PRINTING ALL REPORTS IN THE DB')
+        for i in report_db.path:
+            print(i)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

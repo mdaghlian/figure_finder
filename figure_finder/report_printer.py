@@ -24,25 +24,25 @@ class ReportMaker(object):
     Class that helps print reports to html, and save them in the ff database
     """
 
-    def __init__(self, file_name, file_path, report_overwrite='o', rep_tags=[], open_html=True):
+    def __init__(self, name, path, report_overwrite='o', rep_tags=[], open_html=True):
         """__init__
 
         Constructor for report maker.
 
         """                
-        self.file_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        self.file_name = file_name
-        self.file_path = os.path.abspath(opj(file_path, file_name))
-        self.html_path = os.path.abspath(opj(self.file_path, file_name+'.html')) 
-        self.img_path = os.path.abspath(opj(self.file_path, 'images'))
+        self.date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        self.name = name
+        self.path = os.path.abspath(opj(path, name))
+        self.html_path = os.path.abspath(opj(self.path, name+'.html')) 
+        self.img_path = os.path.abspath(opj(self.path, 'images'))
         self.rep_tags = rep_tags
         self.open_html = open_html
-
+        self.html_saved = False
         # -> add the report name to rep tags
-        self.rep_tags += self.file_name.split('_')
+        self.rep_tags += self.name.split('_')
         self.num_figs = 0
 
-        if os.path.exists(self.file_path):
+        if os.path.exists(self.path):
             print('FOLDER ALREADY EXISTS!')
             if report_overwrite!=None:
                 save_instruction=report_overwrite
@@ -56,21 +56,21 @@ class ReportMaker(object):
                 # Overwrite - > delete the old version
                 print('Overwriting')
                 try: 
-                    REP_remove_csv_entries(self.file_name)
+                    REP_remove_csv_entries(self.name)
                 except:
-                    print(f'Could not remove {self.file_name} from csv database...' )
+                    print(f'Could not remove {self.name} from csv database...' )
                     print(f'carrying on...' )
             elif save_instruction=='s':
                 print('Not saving - skipping')
                 return
             elif save_instruction=='d':
                 print('Adding date to fig name to remove conflict...')
-                date_now = self.file_date
-                file_name = file_name + '_' + date_now
-                self.file_name = file_name
-                self.file_path = os.path.abspath(opj(file_path, file_name))
-                self.html_path = os.path.abspath(opj(self.file_path, file_name+'.html')) 
-                self.img_path = os.path.abspath(opj(self.file_path, 'images'))
+                date_now = self.date
+                name = name + '_' + date_now
+                self.name = name
+                self.path = os.path.abspath(opj(path, name))
+                self.html_path = os.path.abspath(opj(self.path, name+'.html')) 
+                self.img_path = os.path.abspath(opj(self.path, 'images'))
                 self.num_figs = 0                
         
         # Create report id 
@@ -83,9 +83,9 @@ class ReportMaker(object):
             new_rep_id = ''.join(random.choice(letters) for i in range(string_length))
         self.report_id = new_rep_id
 
-        if not os.path.exists(self.file_path):
+        if not os.path.exists(self.path):
             print('Making folder')
-            os.mkdir(self.file_path)
+            os.mkdir(self.path)
         if not os.path.exists(self.img_path):
             os.mkdir(self.img_path)
                 
@@ -99,7 +99,7 @@ class ReportMaker(object):
 
         self.old_stdout = sys.stdout
         
-        self.log_file = open(opj(self.file_path, 'report.log'), 'w') 
+        self.log_file = open(opj(self.path, 'report.log'), 'w') 
         sys.stdout = self.log_file
 
     def __exit__(self,exc_type, exc_val, exc_tb):
@@ -144,7 +144,7 @@ class ReportMaker(object):
             print(path_or_fig)
             db_entry = FIG_save_fig_and_code_as_svg(
                 path_or_fig, 
-                fig_tags=[self.file_name, self.report_id], # Add report name to fig tags
+                fig_tags=[self.name, self.report_id], # Add report name to fig tags
                 fig_name=fig_name, 
                 save_folder=self.img_path, 
                 fig_overwrite='o', 
@@ -158,9 +158,12 @@ class ReportMaker(object):
             self.num_figs += 1
     
     def save_html(self):
-        self.txt_doc += '\n</body>\n</html>'
-        text_file = open(self.html_path, "w")
-        text_file.write(self.txt_doc)
-        text_file.close()
-
-        REP_add_rep_to_db(self)
+        if self.html_saved:
+            return
+        else:
+            self.txt_doc += '\n</body>\n</html>'
+            text_file = open(self.html_path, "w")
+            text_file.write(self.txt_doc)
+            text_file.close()
+            REP_add_rep_to_db(self)
+            self.html_saved = True
