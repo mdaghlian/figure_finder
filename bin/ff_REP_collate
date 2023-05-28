@@ -72,12 +72,10 @@ Example:
     
     exclude += ['collated']
     rep_db_match = ff.REP_find_rep_with_tags(rep_tags, exclude=exclude)
-    match_rep_name = [rep_db_match[i]['file_name'] for i in range(len(rep_db_match))]
-    match_rep_path = [rep_db_match[i]['html_path'] for i in range(len(rep_db_match))]
-    
-    path_to_use = os.path.dirname(os.path.realpath(rep_db_match[0]['file_path']))
+        
+    path_to_use = os.path.dirname(os.path.realpath(rep_db_match.path[0]))
     print('Files to collate include:')
-    for i,this_name in enumerate(match_rep_name):
+    for i,this_name in enumerate(rep_db_match.name):
         print(f'{i:03}, {this_name}')
     
     if not auto_col:

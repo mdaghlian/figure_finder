@@ -139,12 +139,12 @@ class ReportMaker(object):
         
         if isinstance(path_or_fig, mpl.figure.Figure):
             extracted_fig_name = FIG_get_figure_name(path_or_fig, '', '')            
-            fig_name = f'{self.report_id}_fig{self.num_figs:03d}_{extracted_fig_name}'
+            fig_name = f'fig{self.num_figs:03d}_{extracted_fig_name}'
             print(fig_name)
             print(path_or_fig)
             db_entry = FIG_save_fig_and_code_as_svg(
                 path_or_fig, 
-                fig_tags=[self.file_name], # Add report name to fig tags
+                fig_tags=[self.file_name, self.report_id], # Add report name to fig tags
                 fig_name=fig_name, 
                 save_folder=self.img_path, 
                 fig_overwrite='o', 

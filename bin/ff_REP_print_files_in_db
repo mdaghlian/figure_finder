@@ -46,9 +46,8 @@ Usage:
             sys.exit()
 
     report_db = ff.REP_load_report_db()
-    rep_path_list = [report_db[i]['file_path'] for i in range(len(report_db))]    
     print('PRINTING ALL REPORTS IN THE DB')
-    for i in rep_path_list:
+    for i in report_db.path:
         print(i)
 
 if __name__ == "__main__":

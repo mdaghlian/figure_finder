@@ -132,7 +132,7 @@ def check_string_for_substring(filt, str2check, exclude=None):
 # *******************************************************************************************************
 
 def FIG_remove_csv_entries(fig_names2remove):
-    '''remove_csv_entries
+    '''FIG_remove_csv_entries
     
     Function to remove figures from csv database
     Parameters
@@ -149,7 +149,7 @@ def FIG_remove_csv_entries(fig_names2remove):
         fig_names2remove = [fig_names2remove]        
 
     figure_db = FIG_load_figure_db()
-    fig_name_list = [figure_db[i]['name'] for i in range(len(figure_db))]     
+    fig_name_list = figure_db.name.copy()
     # [1] Create a backup
     back_up_name = 'backup_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.csv'
     back_up_file = opj(figure_dump_bin, back_up_name)
@@ -163,29 +163,28 @@ def FIG_remove_csv_entries(fig_names2remove):
             # Check for png 
             extensions_to_delete = ['.png', '.txt', '.svg']
             for this_ext in extensions_to_delete:
-                if os.path.exists(figure_db[i]['path'] + this_ext):
-                    os.system(f"mv {figure_db[i]['path'] + this_ext} {opj(figure_dump_bin, this_fig + this_ext)}") 
+                if os.path.exists(figure_db['path'][i] + this_ext):
+                    # os.system(f"mv {figure_db['path'][i] + this_ext} {opj(figure_dump_bin, this_fig + this_ext)}") 
+                    os.system(f"rm {figure_db['path'][i] + this_ext}")                     
         else:
             entries_to_keep.append(i)
-    new_figure_db = []
-    for i in entries_to_keep:
-        new_figure_db += [figure_db[i]]
+
+    new_figure_db = figure_db.loc[entries_to_keep].copy()
 
     FIG_save_figure_db(new_figure_db)
     return None
 
 def FIG_load_figure_db():
-    '''load_figure_db
+    '''FIG_load_figure_db
     
-    Loads the csv database of figures as a list of dicts
-    Such that if it returns figure_db where:
-    figure_db[0] is a dict with entries:
-        figure_db[0]['name']        name of the figure (as stored in csv),
-        figure_db[0]['date']        date figure was made,
-        figure_db[0]['path']        path to figure (without extentions, .svg, .png or .txt),
-        figure_db[0]['tags']        list of tags associated with the figure (descriptions, etc.),
-        figure_db[0]['cwd']         the working directory where the figure was made,
-        figure_db[0]['nb_path']     the path to the notebook (or script) where the figure was made,        
+    Loads the pandas dataframe of info about saved figures
+    with keys:
+        figure_db['name']        name of the figure
+        figure_db['date']        date figure was made,
+        figure_db['path']        path to figure (without extentions, .svg, .png or .txt),
+        figure_db['tags']        list of tags associated with the figure (descriptions, etc.),
+        figure_db['cwd']         the working directory where the figure was made,
+        figure_db['nb_path']     the path to the notebook (or script) where the figure was made,        
 
     Parameters
     ----------
@@ -194,19 +193,13 @@ def FIG_load_figure_db():
     ----------
     Returns
     ----------
-    figure_db: list of dicts (structured as written above)    
+    figure_db: pandas dataframe
     '''    
     if os.path.exists(fig_tag_file):
         try:
-            tag_dict_dict = pd.read_csv(fig_tag_file).to_dict('index')
-            # Loads a dictionary with first set of keys as 0,1,2,3... 
-            # -> change this to be a list of dictionaries...
-            figure_db = []
-            for key_idx in tag_dict_dict.keys():
-                figure_db += [tag_dict_dict[key_idx]]   
-            # Now fix the loading of the tags, which load as a listish_string...
+            figure_db = pd.read_csv(fig_tag_file)
             for i in range(len(figure_db)):
-                figure_db[i]['tags'] = listish_str_to_list(figure_db[i]['tags'])
+                figure_db['tags'][i] = listish_str_to_list(figure_db['tags'][i])
         except:
             # If all entries have been deleted - reload as empty dict
             figure_db = []                
@@ -217,31 +210,30 @@ def FIG_load_figure_db():
     return figure_db
 
 def FIG_save_figure_db(figure_db):
-    '''save_figure_db
+    '''FIG_save_figure_db
     
     Saves an updated version of the csv database         
 
     Parameters
     ----------
-    figure_db[0] is a dict with entries:
-        figure_db[0]['name']        name of the figure (as stored in csv),
-        figure_db[0]['date']        date figure was made,
-        figure_db[0]['path']        path to figure (without extentions, .svg, .png or .txt),
-        figure_db[0]['tags']        list of tags associated with the figure (descriptions, etc.),
-        figure_db[0]['cwd']         the working directory where the figure was made,
-        figure_db[0]['nb_path']     the path to the notebook (or script) where the figure was made,        
+    figure_db is a pandas dataframe with keys
+        figure_db['name']        name of the figure
+        figure_db['date']        date figure was made,
+        figure_db['path']        path to figure (without extentions, .svg, .png or .txt),
+        figure_db['tags']        list of tags associated with the figure (descriptions, etc.),
+        figure_db['cwd']         the working directory where the figure was made,
+        figure_db['nb_path']     the path to the notebook (or script) where the figure was made,        
     ----------
     Returns
     ----------
     None        
     '''    
-    df = pd.DataFrame(figure_db)
-    df.to_csv(fig_tag_file, index=False)
+    figure_db.to_csv(fig_tag_file, index=False)
 
     return None
 
 def FIG_remove_fig_with_tags(fig_tags, fig_name=[], exclude=None):
-    '''remove_fig_with_tags
+    '''FIG_remove_fig_with_tags
     
     Function to remove figures which match a certain pattern
     >> this will delete there entries in the csv database, and also delete the 
@@ -265,7 +257,7 @@ def FIG_remove_fig_with_tags(fig_tags, fig_name=[], exclude=None):
     # Match using tags (include & exclude)
     fig_db_match = FIG_find_fig_with_tags(fig_tags, fig_name=fig_name, exclude=exclude)
     # Concatenate a list of figure names
-    match_fig_name = [fig_db_match[i]['name'] for i in range(len(fig_db_match))]    
+    match_fig_name = fig_db_match.name.copy()
     print(f'Found {len(match_fig_name)} files match')
     for this_fig in match_fig_name:
         print(this_fig)
@@ -289,7 +281,7 @@ def FIG_remove_fig_with_tags(fig_tags, fig_name=[], exclude=None):
 
 
 def FIG_find_fig_with_tags(fig_tags, fig_name=[], exclude=None):
-    '''find_fig_with_tags
+    '''FIG_find_fig_with_tags
     
     Function to find figures which match a certain pattern
 
@@ -305,31 +297,27 @@ def FIG_find_fig_with_tags(fig_tags, fig_name=[], exclude=None):
 
     Returns 
     ---------
-    figure_db_TAG_MATCH: list of dicts
-        A list of dicts (formatted the same as the db as a whole), which match the search criteria
+    figure_db_TAG_MATCH: pandas dataframe, of matching entries
 
     '''        
     # Load tag file
     figure_db = FIG_load_figure_db()
-    fig_name_list = [figure_db[i]['name'] for i in range(len(figure_db))] 
+    fig_name_list = figure_db.name.copy()
     # check fig names 
     if fig_name!=[]:
         match_fig_names_idc = check_string_for_substring(filt=fig_name, str2check=fig_name_list, exclude=None)
-        # match_fig_names = [figure_db[i]['name'] for i in ] 
         print(f'found {len(match_fig_names_idc)} files with this name')
     else: 
         print(f'fig name not specified, looking at all figs')
         match_fig_names_idc = np.arange(0,len(fig_name_list))
 
-    figure_db_NAME_MATCH = [figure_db[i] for i in match_fig_names_idc]
+    figure_db_NAME_MATCH = figure_db.loc[match_fig_names_idc].copy()
     # [1] Get a list of possible file paths, names, and turn the tags into one string
-    match_fig_tags = [' '.join(figure_db[i]['tags']) for i in match_fig_names_idc]            
+    match_fig_tags = [' '.join(figure_db['tags'][i]) for i in match_fig_names_idc]            
     match_idc = check_string_for_substring(filt=fig_tags, str2check=match_fig_tags, exclude=exclude)
-    figure_db_TAG_MATCH = [figure_db_NAME_MATCH[i] for i in match_idc]
+    figure_db_TAG_MATCH = figure_db_NAME_MATCH.loc[match_idc].copy()
 
     return figure_db_TAG_MATCH
-
-
 
 def FIG_get_figure_name(fig, fig_name, fig_date):
     '''get_figure_name
@@ -483,12 +471,21 @@ def FIG_save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figu
         cell_code_str = ''
         
     this_db_entry = {
-        'name' : fig_name,
-        'date' : fig_date,
-        'path' : fig_path,
-        'tags' : fig_tags,
-        'cwd' : fig_cwd,
-        'nb_path' : notebook_path,        
+        'name'      : fig_name,
+        'date'      : fig_date,
+        'path'      : fig_path,
+        'tags'      : fig_tags,
+        'cwd'       : fig_cwd,
+        'nb_path'   : notebook_path,        
+    }
+    
+    this_pd_entry = {
+        'name'      : [fig_name],
+        'date'      : [fig_date],
+        'path'      : [fig_path],
+        'tags'      : [fig_tags],
+        'cwd'       : [fig_cwd],
+        'nb_path'   : [notebook_path],        
     }
 
     if annotate_svg:
@@ -499,8 +496,9 @@ def FIG_save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figu
     
     # Load csv...
     figure_db = FIG_load_figure_db()
-    figure_db += [this_db_entry]
-    FIG_save_figure_db(figure_db)
+    new_row = pd.DataFrame(this_pd_entry)
+    new_figure_db = pd.concat([new_row,figure_db.loc[:]]).reset_index(drop=True)
+    FIG_save_figure_db(new_figure_db)
 
     if return_db_entry:
         return this_db_entry
@@ -542,7 +540,6 @@ def FIG_insert_info_to_svg(fig_dict, cell_code_str):
 
     return    
 
-
 def FIG_scrape_tags_from_svg(svg_file, fig_tags=[]):
 
     with open(svg_file) as f:
@@ -572,25 +569,23 @@ def FIG_scrape_tags_from_svg(svg_file, fig_tags=[]):
 def FIG_find_fig_by_date():
     # Load tag file
     figure_db = FIG_load_figure_db()
-    fig_date_list = [figure_db[i]['date'] for i in range(len(figure_db))]
+    fig_date_list = figure_db.date.copy()
     # only want 
     print(fig_date_list)
     return 
-
-
 
 def FIG_clean_csv():
     if not os.path.exists(fig_tag_file):
         print('Figure finder: NO CSV FILE')
         return
     figure_db = FIG_load_figure_db()
-    if figure_db==[]:
+    if len(figure_db)==0:
         print('Figure finder: Database is empty')
         return
 
-    fig_path_list = [figure_db[i]['path'] for i in range(len(figure_db))]     
+    fig_path_list = figure_db.path.copy()
     # [1] Create a backup
-    back_up_name = 'backup_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.csv'
+    back_up_name = 'FIG_backup_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.csv'
     back_up_file = opj(figure_dump_bin, back_up_name)
     os.system(f'cp {fig_tag_file} {back_up_file}')  
     # [2] Check whether the figures still exist...
@@ -607,10 +602,9 @@ def FIG_clean_csv():
         else:
             # print(f'*** COULD FIND ***{this_fig}')
             entries_to_keep.append(i)
-    new_figure_db = []
-    for i in entries_to_keep:
-        new_figure_db += [figure_db[i]]
-
+    
+    
+    new_figure_db = figure_db.loc[entries_to_keep]
     FIG_save_figure_db(new_figure_db)
     return  
 

@@ -48,7 +48,7 @@ Usage:
         if opt in ('-h', '--help'):
             print(main.__doc__)
             sys.exit()
-    ff.clean_csv()
+    ff.FIG_clean_csv()
 
 if __name__ == "__main__":
     main(sys.argv[1:])

@@ -67,7 +67,7 @@ Example:
             fig_name = arg
         elif opt in ("-i", "--idx"):
             idx = int(arg)
-    ff.remove_fig_with_tags(fig_tags, fig_name=fig_name, exclude=exclude)
+    ff.FIG_remove_fig_with_tags(fig_tags, fig_name=fig_name, exclude=exclude)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

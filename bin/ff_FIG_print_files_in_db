@@ -48,16 +48,14 @@ Usage:
         if opt in ('-n', '--name'):
             print_full_path = False
 
-    figure_db = ff.load_figure_db()
-    fig_path_list = [figure_db[i]['path'] for i in range(len(figure_db))]    
-    fig_name_list = [figure_db[i]['name'] for i in range(len(figure_db))]    
+    figure_db = ff.FIG_load_figure_db()
     if print_full_path:
         print('PRINTING ALL FIGURES IN THE DB')
-        for i in fig_path_list:
+        for i in figure_db.path:
             print(i)
     else:
         print('PRINTING ALL FIGURES IN THE DB')
-        for i in fig_name_list:
+        for i in figure_db.name:
             print(i)
 
 if __name__ == "__main__":

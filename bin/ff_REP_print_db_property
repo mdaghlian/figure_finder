@@ -75,39 +75,19 @@ Example:
         elif opt in ("-i", "--idx"):
             idx = int(arg)
     rep_db_match = ff.REP_find_rep_with_tags(rep_tags, exclude=exclude)
-    # *** GET ALL MATCHING PROPERTIES
-    MATCH_prop = {}
-    MATCH_prop['file_date']     = [rep_db_match[i]['file_date'] for i in range(len(rep_db_match))]
-    MATCH_prop['file_name']     = [rep_db_match[i]['file_name'] for i in range(len(rep_db_match))]
-    MATCH_prop['file_path']     = [rep_db_match[i]['file_path'] for i in range(len(rep_db_match))]
-    MATCH_prop['html_path']     = [rep_db_match[i]['html_path'] for i in range(len(rep_db_match))]
-    MATCH_prop['rep_tags']      = [rep_db_match[i]['rep_tags'] for i in range(len(rep_db_match))]
-    MATCH_prop['num_figs']      = [rep_db_match[i]['num_figs'] for i in range(len(rep_db_match))]
-    MATCH_prop['report_id']     = [rep_db_match[i]['report_id'] for i in range(len(rep_db_match))]        
-    
-    match_rep_name = MATCH_prop['file_name']
-    match_rep_tags = MATCH_prop['rep_tags']
 
-    if (len(match_rep_name)>1) & (idx==[]):
+    if (len(rep_db_match)>1) & (idx==[]):
         print('More than 1 reports match the description')
         print('Be more specific or select the file, using idx=X, (or -i X)')
         print('Files found include:')
         
     if idx!=[]:
-        MATCH_prop['file_date']  = MATCH_prop['file_date'][idx]
-        MATCH_prop['file_name']  = MATCH_prop['file_name'][idx]
-        MATCH_prop['file_path']  = MATCH_prop['file_path'][idx]
-        MATCH_prop['html_path']  = MATCH_prop['html_path'][idx]
-        MATCH_prop['rep_tags']   = MATCH_prop['rep_tags'][idx]
-        MATCH_prop['num_figs']   = MATCH_prop['num_figs'][idx]
-        MATCH_prop['report_id']  = MATCH_prop['report_id'][idx]        
-        match_rep_tags = match_rep_tags[idx]
-        match_rep_name = match_rep_name[idx]
-
-    for i_entry in range(len(match_rep_name)):
+        rep_db_match = rep_db_match.loc[idx]
+    
+    for i_entry in range(len(rep_db_match)):
         this_str = ''
         for i_prop in props:
-            this_str += f'| {MATCH_prop[i_prop][i_entry]}'
+            this_str += f'| {rep_db_match[i_prop][i_entry]}'
 
         print(f'{i_entry:03}, {this_str}')
 
