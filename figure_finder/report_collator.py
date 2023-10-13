@@ -24,17 +24,23 @@ class ReportCollator(object):
     
     """
 
-    def __init__(self, file_name, file_path, report_overwrite='o', tags_incl=[], tags_excl=[], open_html=True):
+    def __init__(self, name, path, report_overwrite='o', tags_incl=[], tags_excl=[], open_html=True):
         """__init__
 
         Constructor for report maker.
-
+date
+name
+path
+html_path
+tags
+num_figs
+report_id
         """                
-        self.file_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        self.file_name = file_name
-        self.file_path = os.path.abspath(opj(file_path, file_name))
-        self.html_path = os.path.abspath(opj(self.file_path, file_name+'.html')) 
-        self.img_path = os.path.abspath(opj(self.file_path, 'images'))
+        self.date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        self.name = name
+        self.path = os.path.abspath(opj(path, name))
+        self.html_path = os.path.abspath(opj(self.path, name+'.html')) 
+        self.img_path = os.path.abspath(opj(self.path, 'images'))
         self.tags_incl = tags_incl
         self.tags_excl = tags_excl + ['collated']
         self.rep_tags = []
@@ -42,10 +48,10 @@ class ReportCollator(object):
         self.open_html = open_html
 
         # -> add the report name to rep tags
-        self.rep_tags += self.file_name.split('_')
+        self.rep_tags += self.name.split('_')
         self.num_figs = 0
 
-        if os.path.exists(self.file_path):
+        if os.path.exists(self.path):
             print('FOLDER ALREADY EXISTS!')
             if report_overwrite!=None:
                 save_instruction=report_overwrite
@@ -59,9 +65,9 @@ class ReportCollator(object):
                 # Overwrite - > delete the old version
                 print('Overwriting')
                 try: 
-                    REP_remove_csv_entries(self.file_name)
+                    REP_remove_csv_entries(self.name)
                 except:
-                    print(f'Could not remove {self.file_name} from csv database...' )
+                    print(f'Could not remove {self.name} from csv database...' )
                     print(f'carrying on...' )
             elif save_instruction=='s':
                 print('Not saving - skipping')
@@ -69,16 +75,17 @@ class ReportCollator(object):
             elif save_instruction=='d':
                 print('Adding date to fig name to remove conflict...')
                 date_now = self.file_date
-                file_name = file_name + '_' + date_now
-                self.file_name = file_name
-                self.file_path = os.path.abspath(opj(file_path, file_name))
-                self.html_path = os.path.abspath(opj(self.file_path, file_name+'.html')) 
-                self.img_path = os.path.abspath(opj(self.file_path, 'images'))
+                name = name + '_' + date_now
+                self.name = name
+                self.path = os.path.abspath(opj(path, name))
+                self.html_path = os.path.abspath(opj(self.path, name+'.html')) 
+                self.img_path = os.path.abspath(opj(self.path, 'images'))
                 self.num_figs = 0                
         
         # Create report id 
         REP_db = REP_load_report_db()
-        list_of_existing_ids = [REP_db[i]['report_id'] for i in range(len(REP_db))]
+
+        list_of_existing_ids = [REP_db.loc[i]['report_id'] for i in REP_db.index]
         letters = string.ascii_letters
         string_length = 6
         new_rep_id = ''.join(random.choice(letters) for i in range(string_length))
@@ -86,15 +93,15 @@ class ReportCollator(object):
             new_rep_id = ''.join(random.choice(letters) for i in range(string_length))
         self.report_id = new_rep_id
 
-        if not os.path.exists(self.file_path):
+        if not os.path.exists(self.path):
             print('Making folder')
-            os.mkdir(self.file_path)
+            os.mkdir(self.path)
         if not os.path.exists(self.img_path):
             os.mkdir(self.img_path)
                 
         # Start txt document
         self.txt_doc = '<!DOCTYPE html>\n<html>\n<body>\n'
-        self.add_title(self.file_name)
+        self.add_title(self.name)
     # *********************************************************************
     # ****************************** LOGGING ******************************
     # *********************************************************************
@@ -102,7 +109,7 @@ class ReportCollator(object):
 
         self.old_stdout = sys.stdout
         
-        self.log_file = open(opj(self.file_path, 'report.log'), 'w') 
+        self.log_file = open(opj(self.path, 'report.log'), 'w') 
         sys.stdout = self.log_file
 
     def __exit__(self,exc_type, exc_val, exc_tb):
@@ -144,20 +151,22 @@ class ReportCollator(object):
         # img_order = kwargs.get('image_order', 'REP') # REP or fig
 
         # Get the name of matching reports:
-        print(self.tags_incl)
         rep_match = REP_find_rep_with_tags(rep_tags=self.tags_incl, exclude=self.tags_excl)
-        self.add_text(f'Collating from {[this_rep["file_name"] for this_rep in rep_match]}')
+        rep_match.sort_values(by=['name'])
+        self.add_text(f'Collating from:')
+        for i_name in rep_match.name:
+            self.add_text(i_name)
         # find the max number of figures:
-        n_figs = [this_rep['num_figs'] for this_rep in rep_match]
-        max_n_figs = np.max(n_figs)
+        max_n_figs = int(rep_match['num_figs'].max())
         
         for i_fig in range(max_n_figs):
             self.add_title(f'fig{i_fig:03}', level=2)
-            for this_rep in rep_match:
-                this_img_path = opj(this_rep['file_path'], 'images')                
+            for rep_idx in rep_match.index:
+                # return
+                this_img_path = opj(rep_match.loc[rep_idx].path, 'images')                
                 this_img_list = os.listdir(this_img_path)
                 this_img_id = list(check_string_for_substring(filt=[f'fig{i_fig:03}', '.svg'], str2check=this_img_list))[0]
-                self.add_text(f'fig{i_fig:03}, {this_rep["file_name"]}')                
+                self.add_text(f'fig{i_fig:03}, {rep_match.loc[rep_idx].name}')                
                 this_img_name = this_img_list[this_img_id]
                 this_new_path = opj(self.img_path, this_img_name)
                 os.system(f'cp {opj(this_img_path, this_img_name)} {this_new_path}')

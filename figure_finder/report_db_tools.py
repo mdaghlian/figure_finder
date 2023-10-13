@@ -31,10 +31,11 @@ def REP_remove_csv_entries(rep_names2remove):
     Returns
     ----------
     None    
-    '''    
+    '''
     if isinstance(rep_names2remove, str):
         rep_names2remove = [rep_names2remove]        
-
+    if not isinstance(rep_names2remove, list):
+        rep_names2remove = list(rep_names2remove)    
     report_db = REP_load_report_db()
     rep_name_list = report_db.name.copy()
     # [1] Create a backup
@@ -56,6 +57,7 @@ def REP_remove_csv_entries(rep_names2remove):
     new_report_db = report_db.loc[entries_to_keep].copy()
 
     REP_save_report_db(new_report_db)
+    REP_clean_csv()
     return None
     
 def REP_load_report_db():
@@ -80,17 +82,26 @@ def REP_load_report_db():
     ----------
     report_db: pandas dataframe
     '''
+    empty_dict = {
+        'date' : [],
+        'name' : [],
+        'path' : [],
+        'html_path' : [],
+        'tags' : [],
+        'num_figs' : [],
+        'report_id' : [],        
+    }
     if os.path.exists(rep_tag_file):
         try:
-            report_db = pd.read_csv(rep_tag_file)
+            report_db = pd.read_csv(rep_tag_file)            
             for i in range(len(report_db)):
-                report_db['tags'][i] = listish_str_to_list(report_db['tags'][i])
+                this_tags = str(report_db.loc[i].tags)
+                report_db.tags[i] = listish_str_to_list(this_tags)
         except:
             # If all entries have been deleted - reload as empty dict
-            report_db = pd.DataFrame([])
-            
+            report_db = pd.DataFrame(empty_dict)
     else: 
-        report_db = pd.DataFrame([])
+        report_db = pd.DataFrame(empty_dict) 
     
     return report_db
 
@@ -113,9 +124,8 @@ def REP_save_report_db(report_db):
     Returns
     ----------
     None        
-    '''        
+    '''
     report_db.to_csv(rep_tag_file, index=False)
-
     return None
 
 def REP_remove_rep_with_tags(rep_tags, rep_name=[], exclude=None):
@@ -198,7 +208,6 @@ def REP_find_rep_with_tags(rep_tags, rep_name=[], exclude=None):
 
     report_db_NAME_MATCH = report_db.loc[match_rep_names_idc].copy()
     # [1] Get a list of possible file paths, names, and turn the tags into one string
-    print(report_db_NAME_MATCH)
     match_rep_tags = [' '.join(report_db['tags'][i]) for i in match_rep_names_idc]            
     match_idc = check_string_for_substring(filt=rep_tags, str2check=match_rep_tags, exclude=exclude)
     report_db_TAG_MATCH = report_db_NAME_MATCH.loc[match_idc].copy()
@@ -303,17 +312,17 @@ def REP_show_REP_with_tags(rep_tags, rep_name=[], exclude=None, idx=[]):
             for i,this_name in enumerate(rep_db_match.name):
                 print(f'{i:03}, {this_name}')
         elif idx=='all':
-            for i,this_path in enumerate(rep_db_match.html_path):
+            for i in rep_db_match.index:
                 print(f'Opening {rep_db_match.name[i]}')
-                os.system(f'firefox {this_path} & ')
+                os.system(f'firefox {rep_db_match.html_path[i]} & ')
 
         else:
             print(f'Opening {rep_db_match.name[idx]}')
-            os.system(f'firefox {rep_db_match.html_path[idx]}.svg & ')
+            os.system(f'firefox {rep_db_match.html_path[idx]} & ')
 
     else:
-        for i,this_path in enumerate(rep_db_match.html_path):
-            print(f'Opening {rep_db_match.name[i]}')
+        for this_path,this_name in zip(rep_db_match.html_path, rep_db_match.name):
+            print(f'Opening {this_name}')
             os.system(f'firefox {this_path} & ')
         
 

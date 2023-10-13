@@ -80,14 +80,14 @@ Example:
         print('More than 1 reports match the description')
         print('Be more specific or select the file, using idx=X, (or -i X)')
         print('Files found include:')
-        
+    print(rep_db_match.index)
     if idx!=[]:
-        rep_db_match = rep_db_match.loc[idx]
-    
-    for i_entry in range(len(rep_db_match)):
+        pd_idx = rep_db_match.index[idx]
+        rep_db_match = rep_db_match.loc[pd_idx]
+    for i_entry in rep_db_match.index:
         this_str = ''
-        for i_prop in props:
-            this_str += f'| {rep_db_match[i_prop][i_entry]}'
+        for i_prop in props:            
+            this_str += f'| {rep_db_match.loc[i_entry][i_prop]}'
 
         print(f'{i_entry:03}, {this_str}')
 

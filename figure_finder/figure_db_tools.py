@@ -357,7 +357,7 @@ def FIG_get_figure_name(fig, fig_name, fig_date):
     fig_name = sanitise_string(fig_name)
     return fig_name
 
-def FIG_save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_dump, return_db_entry=True, **kwargs):
+def FIG_save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_dump, return_db_entry=True, save_to_db=True, **kwargs):
     '''save_fig_and_code_as_svg
     What it says on the tin 
     Parameters
@@ -495,10 +495,11 @@ def FIG_save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figu
         print('Not inserting info to svg file...')
     
     # Load csv...
-    figure_db = FIG_load_figure_db()
-    new_row = pd.DataFrame(this_pd_entry)
-    new_figure_db = pd.concat([new_row,figure_db.loc[:]]).reset_index(drop=True)
-    FIG_save_figure_db(new_figure_db)
+    if save_to_db:
+        figure_db = FIG_load_figure_db()
+        new_row = pd.DataFrame(this_pd_entry)
+        new_figure_db = pd.concat([new_row,figure_db.loc[:]]).reset_index(drop=True)
+        FIG_save_figure_db(new_figure_db)
 
     if return_db_entry:
         return this_db_entry
