@@ -17,6 +17,7 @@ from .utils import *
 from .report_printer import *
 from .report_db_tools import *
 from .report_collator import *
+from .nb_to_html import *
 
 
 REP_clean_csv()

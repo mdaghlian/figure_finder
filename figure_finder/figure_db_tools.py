@@ -381,6 +381,7 @@ def FIG_save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figu
     # GET PARAMETERS....
     extract_tags = kwargs.get("extract_tags", True)
     save_cwd = kwargs.get("save_cwd", True)
+    save_txt = kwargs.get("save_txt", False)
     save_cell_code = kwargs.get("save_cell_code", True)
     save_nb_path = kwargs.get("save_nb_path", True)
     fig_overwrite = kwargs.get("fig_overwrite", None) ### *** CHANGE THIS TO AUTOMATICALLY OVERWRITE OR NOT...***
@@ -395,12 +396,12 @@ def FIG_save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figu
         if fig_overwrite!=None:
             save_instruction=fig_overwrite
         else:
-            print('Overwrite ? ("o")')
-            print('Skip ? ("s")')
-            print('Save copy with date ? ("d")')
+            print('Overwrite ? ("ow")')
+            print('Skip ? ("skip")')
+            print('Save copy with date ? ("date")')
             print('To automatically choose one of these options edit "fig_overwrite" argument in utils.save_figure_with_tags')
             save_instruction = input()
-        if save_instruction=="o":
+        if save_instruction=="ow":
             # Overwrite - > delete the old version
             try: 
                 FIG_remove_csv_entries(fig_name)
@@ -409,11 +410,11 @@ def FIG_save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figu
                 print(f'carrying on...' )
             
 
-        elif save_instruction=="s":
+        elif save_instruction=="skip":
             # SKIPPING
             print('Not saving - skipping')
             return
-        elif save_instruction=="d":
+        elif save_instruction=="date":
             print('Adding date to fig name to remove conflict...')
             fig_name = fig_name + '_' + fig_date
 
@@ -456,17 +457,16 @@ def FIG_save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figu
         try: 
             # Get the code from the cell that we are saving in...
             cell_code_str = get_ipython().get_parent()['content']['code']
+        except:
+            f = open(notebook_path, 'r')            
+            cell_code_str = f.read()            
+        
+        if save_txt:
             cell_code_path = fig_path + '.txt'
             text_file = open(cell_code_path, "w")
             text_file.write(cell_code_str)
             text_file.close()
-        except:
-            f = open(notebook_path, 'r')            
-            cell_code_str = f.read()            
-            cell_code_path = fig_path + '.txt'
-            text_file = open(cell_code_path, "w")
-            text_file.write(cell_code_str)
-            text_file.close()            
+
     else: 
         cell_code_str = ''
         

@@ -24,7 +24,7 @@ class ReportCollator(object):
     
     """
 
-    def __init__(self, name, path, report_overwrite='o', tags_incl=[], tags_excl=[], open_html=True):
+    def __init__(self, name, path, report_overwrite='ow', tags_incl=[], tags_excl=[], open_html=True):
         """__init__
 
         Constructor for report maker.
@@ -56,12 +56,12 @@ report_id
             if report_overwrite!=None:
                 save_instruction=report_overwrite
             else:
-                print('Overwrite ? ("o")')
-                print('Skip ? ("s")')
-                print('Save copy with date ? ("d")')
+                print('Overwrite ? ("ow")')
+                print('Skip ? ("skip")')
+                print('Save copy with date ? ("date")')
                 print('To automatically choose one of these options edit "fig_overwrite" argument')
                 save_instruction = input()
-            if save_instruction=="o":
+            if save_instruction=="ow":
                 # Overwrite - > delete the old version
                 print('Overwriting')
                 try: 
@@ -69,10 +69,10 @@ report_id
                 except:
                     print(f'Could not remove {self.name} from csv database...' )
                     print(f'carrying on...' )
-            elif save_instruction=='s':
+            elif save_instruction=='skip':
                 print('Not saving - skipping')
                 return
-            elif save_instruction=='d':
+            elif save_instruction=='date':
                 print('Adding date to fig name to remove conflict...')
                 date_now = self.file_date
                 name = name + '_' + date_now

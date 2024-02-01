@@ -25,7 +25,7 @@ class ReportMaker(object):
     Class that helps print reports to html, and save them in the ff database
     """
 
-    def __init__(self, name, path, report_overwrite='o', rep_tags=[], open_html=True, demo_mode=False):
+    def __init__(self, name, path, report_overwrite='ow', rep_tags=[], open_html=True, demo_mode=False):
         """__init__
 
         Constructor for report maker.
@@ -50,12 +50,12 @@ class ReportMaker(object):
             if report_overwrite!=None:
                 save_instruction=report_overwrite
             else:
-                print('Overwrite ? ("o")')
-                print('Skip ? ("s")')
-                print('Save copy with date ? ("d")')
+                print('Overwrite ? ("ow")')
+                print('Skip ? ("skip")')
+                print('Save copy with date ? ("date")')
                 print('To automatically choose one of these options edit "fig_overwrite" argument')
                 save_instruction = input()
-            if save_instruction=="o":
+            if save_instruction=="ow":
                 # Overwrite - > delete the old version
                 print('Overwriting')
                 try: 
@@ -63,10 +63,10 @@ class ReportMaker(object):
                 except:
                     print(f'Could not remove {self.name} from csv database...' )
                     print(f'carrying on...' )
-            elif save_instruction=='s':
+            elif save_instruction=='skip':
                 print('Not saving - skipping')
                 return
-            elif save_instruction=='d':
+            elif save_instruction=='date':
                 print('Adding date to fig name to remove conflict...')
                 date_now = self.date
                 name = name + '_' + date_now
@@ -163,7 +163,7 @@ class ReportMaker(object):
                 fig_tags=fig_tags + [self.name, self.report_id], # Add report name to fig tags
                 fig_name=fig_name, 
                 save_folder=self.img_path, 
-                fig_overwrite='o', 
+                fig_overwrite='ow', 
                 return_db_entr=True)
             print(db_entry)
             self.rep_tags += db_entry['tags']
