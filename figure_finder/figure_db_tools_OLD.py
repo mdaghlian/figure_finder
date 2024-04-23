@@ -319,8 +319,8 @@ def FIG_find_fig_with_tags(fig_tags, fig_name=[], exclude=None):
 
     return figure_db_TAG_MATCH
 
-def FIG_get_figure_name(fig, fig_name, fig_date='', fig_folder=None, fig_ow='ignore'):
-    '''FIG_get_figure_name
+def FIG_get_figure_name(fig, fig_name, fig_date):
+    '''get_figure_name
     Called while in the process of saving a figure
     Used to extract a useful figure name if one is not specified by the user
 
@@ -331,19 +331,13 @@ def FIG_get_figure_name(fig, fig_name, fig_date='', fig_folder=None, fig_ow='ign
         By default will be '', if not specified before hand
     fig_date: str    
         the date when the 'fig' was constructed
-    fig_folder:
-        where saving
-    fig_ow:
-        If a version already exist, what to do? 
-        'ow' - overwrite, 'skip' - do nothing, 'date' - add a version with the date...
-
+    
     ---------
     Returns 
     ---------
     fig_name: str
         An appropriate name. Either that which is entered. Or one extracted from the
         figure. If we cannot find an appropriate name, random+data is used
-    
 
     '''    
     if fig_name=='':
@@ -359,28 +353,11 @@ def FIG_get_figure_name(fig, fig_name, fig_date='', fig_folder=None, fig_ow='ign
                     break
     if fig_name=='':
         # Still not found an id...
-        fig_name = f"random_{fig_date}"        
+        fig_name = f"random_{fig_date}"
     fig_name = sanitise_string(fig_name)
-    
-    if fig_ow=='ignore':
-        # Don't bother checking if it exists...
-        return fig_name
-    
-    # Check if it already exists...
-    files_in_directory = sorted(os.listdir(fig_folder))
-    fig_exists = False
-    for file in files_in_directory:
-        if f'{fig_name}.' in file:
-            fig_exists = True
-    
-    # If date ow add date at the end
-    if fig_exists & (fig_ow=='date'):
-        fig_name = fig_name+fig_date
-        fig_exists = False
+    return fig_name
 
-    return fig_name, fig_exists
-
-def FIG_save_fig_and_code_as_svg(fig, fig_name='', fig_folder=figure_dump, **kwargs):
+def FIG_save_fig_and_code_as_svg(fig, fig_tags=[], fig_name='', save_folder=figure_dump, return_db_entry=True, save_to_db=True, **kwargs):
     '''save_fig_and_code_as_svg
     What it says on the tin 
     Parameters
@@ -390,7 +367,7 @@ def FIG_save_fig_and_code_as_svg(fig, fig_name='', fig_folder=figure_dump, **kwa
     fig_name :
     fig_date: str    
         the date when the 'fig' was constructed
-    fig_folder : 
+    save_folder : 
     return_db_entry
     
     ---------
@@ -401,40 +378,48 @@ def FIG_save_fig_and_code_as_svg(fig, fig_name='', fig_folder=figure_dump, **kwa
         figure. If we cannot find an appropriate name, random+data is used
 
     '''       
-    # Folder...
-    if not os.path.exists(fig_folder):
-        os.mkdir(fig_folder)
     # GET PARAMETERS....
-    fig_tags = kwargs.get('fig_tags', [])
-    return_db_entry = kwargs.get('return_db_entry', True)
-    save_to_db = kwargs.get('save_to_db', True)
     extract_tags = kwargs.get("extract_tags", True)
     save_cwd = kwargs.get("save_cwd", True)
     save_txt = kwargs.get("save_txt", False)
     save_cell_code = kwargs.get("save_cell_code", True)
     save_nb_path = kwargs.get("save_nb_path", True)
-    fig_ow = kwargs.get("fig_ow", 'ow') # 'ow' overwrite, 'skip' don't change, 'date' add date...
+    fig_overwrite = kwargs.get("fig_overwrite", None) ### *** CHANGE THIS TO AUTOMATICALLY OVERWRITE OR NOT...***
     annotate_svg = kwargs.get("annotate_svg", True)
-    
-    # Get fig name + date
-    fig_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')    
-    fig_name,fig_exists = FIG_get_figure_name(
-        fig=fig, fig_name=fig_name, fig_date=fig_date, fig_folder=fig_folder, fig_ow=fig_ow)
-    if fig_exists:
+
+    fig_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    fig_name = FIG_get_figure_name(fig, fig_name, fig_date=fig_date)
+    # *** CHECK WHETHER THE FILE ALREADY EXISTS ***
+    files_in_directory = sorted(os.listdir(save_folder))
+    if fig_name+'.svg' in files_in_directory:
         print(f'{fig_name} already exists...')
-        if fig_ow=="ow":
+        if fig_overwrite!=None:
+            save_instruction=fig_overwrite
+        else:
+            print('Overwrite ? ("ow")')
+            print('Skip ? ("skip")')
+            print('Save copy with date ? ("date")')
+            print('To automatically choose one of these options edit "fig_overwrite" argument in utils.save_figure_with_tags')
+            save_instruction = input()
+        if save_instruction=="ow":
             # Overwrite - > delete the old version
             try: 
                 FIG_remove_csv_entries(fig_name)
             except:
                 print(f'Could not remove {fig_name} from csv database...' )
-                print(f'carrying on...' )            
-        elif fig_ow=="skip":
+                print(f'carrying on...' )
+            
+
+        elif save_instruction=="skip":
             # SKIPPING
             print('Not saving - skipping')
             return
+        elif save_instruction=="date":
+            print('Adding date to fig name to remove conflict...')
+            fig_name = fig_name + '_' + fig_date
+
     
-    fig_path = opj(fig_folder, fig_name)
+    fig_path = opj(save_folder, fig_name)
     fig_path = os.path.abspath(fig_path)
 
     # Now save as an svg
