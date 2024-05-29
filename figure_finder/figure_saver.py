@@ -3,22 +3,13 @@ opj = os.path.join
 
 from datetime import datetime
 import numpy as np
-import sys
-import re
-import string 
-import random 
-import inspect
 import importlib
-
-import logging
-from contextlib import contextmanager
 
 # MATPLOTLIB STUFF
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import pandas as pd
 
-from .figure_db_tools import FIG_save_fig_and_code_as_svg, FIG_get_figure_name, sanitise_string
+from .utils import *
 
 class FigureSaver(object):
     """
@@ -54,13 +45,11 @@ class FigureSaver(object):
         self.fig_tags       = kwargs.get('fig_tags', [])
         
         # -> default formats to save 
-        save_svg_w_code = kwargs.get('save_svg_w_code', True)
         save_svg = kwargs.get('save_svg', False)
         save_png = kwargs.get('save_png', False)
         save_eps = kwargs.get('save_eps', False)
         save_pdf = kwargs.get('save_pdf', False)
         self.save_type_dict = {
-            'save_svg_w_code'   : save_svg_w_code,
             'save_svg'          : save_svg,
             'save_png'          : save_png,
             'save_eps'          : save_eps,
@@ -105,8 +94,10 @@ class FigureSaver(object):
             plt.show(block=True)
             plt.pause(0.001)    
             return
-        
+        context_note = kwargs.get('context_note', None)
+        context_note_pos = kwargs.get('context_note_pos',[0,0] )        
         # What format are we saving? Use defaults unless specified
+        fig_ow      = kwargs.get('fig_ow', self.fig_ow)         
         dpi         = kwargs.get('dpi', self.dpi)        
         save_type_dict = {}
         for save_key in self.save_type_dict.keys():
@@ -120,25 +111,29 @@ class FigureSaver(object):
             this_path = opj(self.path, sub_folder)
             if not os.path.exists(this_path):
                 os.makedirs(this_path)
-
         # Make fig_name -> find from figure, or use default. keep option for adding the date
         fig_date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')                
-        fig_name,_ = FIG_get_figure_name(
+        fig_name,fig_exists = FIG_get_figure_name(
             fig=fig, fig_name=fig_name, fig_date=fig_date,
-            fig_folder=this_path, fig_ow=self.fig_ow
-            )        
+            fig_folder=this_path, fig_ow=fig_ow
+            )             
+        
+        if fig_exists & (fig_ow=='skip'):
+            print('fig exists, not overwriting')
+            return
 
         for s_type in save_type_dict.keys():
-            if (s_type=='save_svg_w_code') & (save_type_dict[s_type]):
-                fig_tags = kwargs.get('fig_tags', []) # if save w code 
-                db_entry = FIG_save_fig_and_code_as_svg(
-                    fig, 
-                    fig_tags=fig_tags + [self.name] + self.fig_tags, # Add overall name to fig tags
-                    fig_name=fig_name, 
-                    save_folder=this_path, 
-                    fig_overwrite=self.fig_ow, 
-                    return_db_entr=True)
-                print(db_entry)
+            if (s_type=='save_svg') & (save_type_dict[s_type]):
+                # meta kwargs
+                meta_kwargs = {**kwargs}
+                meta_kwargs['fig_folder'] = this_path
+                meta_kwargs['fig_ow'] = fig_ow
+                meta_kwargs['dpi'] = dpi
+                FIG_save_svg_meta(
+                    fig=fig, 
+                    fig_name=fig_name,
+                    **meta_kwargs,
+                )                
 
             elif save_type_dict[s_type]:
                 fig_suffix = s_type.replace('save_', '')
@@ -149,6 +144,24 @@ class FigureSaver(object):
                     transparent=True,
                     # backend= 'pgf' if s_type=='save_pdf' else None,
                     )
+        # Add context note explicitly 
+        # (it will be added automatically as metadata in svg files)
+        # but for other files it is created as an extra image
+        if context_note is not None:
+            # Add the context underneath
+            # Add the text to the figure initially
+            text_obj = fig.text(context_note_pos[0], context_note_pos[1], context_note, wrap=True, )
+            fig.canvas.draw()
+            for s_type in save_type_dict.keys():
+                if save_type_dict[s_type]:
+                    fig_suffix = s_type.replace('save_', '')
+                    fig.savefig(
+                        opj(this_path, f'{fig_name}_context.{fig_suffix}'), 
+                        bbox_inches='tight', 
+                        dpi=dpi,
+                        transparent=True,
+                        # backend= 'pgf' if s_type=='save_pdf' else None,
+                        )
         
     
     def add_code_backup(self, bu_list=[], **kwargs):
@@ -168,108 +181,23 @@ class FigureSaver(object):
         if not self.save_mode: # NOT IN SAVE MODE -> quit      
             plt.pause(0.001)
             return
-        
-        do_all_imports = kwargs.get('do_all_imports', False)
-        just_this_cell = kwargs.get('just_this_cell', True)
-        do_full_package = kwargs.get('do_full_package', False)
-
-        # make back up dir
         self.code_bu_dir = opj(self.path, 'code_bu_dir')
-        if not os.path.exists(self.code_bu_dir):
-            os.mkdir(self.code_bu_dir)
+        save_running_code_imports(self.code_bu_dir, bu_list=bu_list, **kwargs)
 
-        if not isinstance(bu_list, list):
-            bu_list = [bu_list]
-        
-        # Loop through...
-        for bu_mod_str in bu_list:            
-            self.save_bu_mod(bu_mod_str, do_full_package=do_full_package)
 
-        # This cell... look at all the import lines in this cell...
-        
-        if not do_all_imports:
-            return 
-        # -> Get string for notebook cell or script
-        # -> first find the path of the script / notebook
-        try: # First try the method that works for noetbookes
-            nb_path = get_ipython().get_parent()['metadata']['cellId']
-            # e.g., 'vscode-notebook-cell:/data1/projects/dumoulinlab/Lab_members/Marcus/programs/figure_finder/example.ipynb#ch0000031'
-            # So need to format it so that it is nice...
-            nb_path = nb_path.split('cell:')[-1]        
-            nb_path = nb_path.split('.ipynb')[0] + '.ipynb'
-        except: 
-            # Try the method that works for scripts...
-            nb_path = inspect.stack()[1].filename
-            # check that this isn't the just another figure_finder function
-            if 'figure_saver' in nb_path:
-                nb_path = inspect.stack()[2].filename        
-        
-        if just_this_cell:
-            # Get the code from the cell that we are saving in...
-            import_code_str = get_ipython().get_parent()['content']['code']
-        else:
-            f = open(nb_path, 'r')            
-            import_code_str = f.read()   
-        # Next check for the import strings
-        import_code_str = import_code_str.split('\n') # Get the different lines
-        extracted_bu_list = []
-        for line in import_code_str:
-            # Empty line ? pass
-            if line=='':
-                continue
-            # Does it start with a '#'?
-            if line.lstrip()[0]=='#':
-                continue
 
-            if (line.split()[0]=='import') or (line.split()[0]=='from'):
-                extracted_bu_list.append(line.split()[1])
-        for bu_mod_str in extracted_bu_list:
-            self.save_bu_mod(bu_mod_str, do_full_package=do_full_package)
-        
+import matplotlib.text as mtext
 
-        return import_code_str
-        
+class WrapText(mtext.Text):
+    def __init__(self,
+                 x=0, y=0, text='',
+                 width=0,
+                 **kwargs):
+        mtext.Text.__init__(self,
+                 x=x, y=y, text=text,
+                 wrap=True,
+                 **kwargs)
+        self.width = width  # in screen pixels. You could do scaling first
 
-    def save_bu_mod(self, bu_mod_str, do_full_package=False):
-        
-        # Save the full package? Or just the specified file
-        if do_full_package:
-            bu_mod_str = bu_mod_str.split('.')[0] 
-        
-        # [2] Check, can we import it?
-        try:
-            bu_mod = importlib.import_module(bu_mod_str)
-        except ImportError as e:
-            print(f"Error importing {bu_mod_str}: {e}")
-            return 
-        
-        # [3] Where copying from?
-        bu_mod_file = bu_mod.__file__        
-        bu_mod_file = bu_mod_file.replace('/__init__.py', '')
-        if '.conda' in bu_mod_file:
-            print(f'{bu_mod_str} is in .conda, not saving')
-            return
-        if 'figure_finder' in bu_mod_file:
-            print(f'{bu_mod_str} is FIGURE FINDER! Not saving')
-            return
-
-        
-        # [4] Make the output file
-        bu_out_file = opj(self.code_bu_dir, bu_mod_str)
-        if os.path.exists(bu_out_file):
-            print('Deleting and remaking folder')
-            os.system(f"rm -r {bu_out_file}")                     
-            os.makedirs(bu_out_file)
-        else:
-            os.makedirs(bu_out_file)
-
-        
-        # Create a text file with info 
-        with open(opj(bu_out_file, f'A0-{bu_mod_str}-ff-backup-info.txt'), 'w') as file:
-            file.write(
-                f'{bu_mod_str} copied on {self.date} from {bu_mod_file}'                
-            )
-
-        cmd1 = f'cp -r {bu_mod_file} {bu_out_file}'
-        print(cmd1)
-        os.system(cmd1)
+    def _get_wrap_line_width(self):
+        return self.width
