@@ -6,7 +6,7 @@ import inspect
 import numpy as np
 import re
 import time
-from IPython.display import display, Javascript
+from IPython.display import display, Javascript, HTML
 import hashlib
 import matplotlib as mpl
 import importlib
@@ -36,14 +36,29 @@ def sanitise_string(s):
 
 def save_notebook(file_path):
     '''save the notebook (i.e., after it has run)
+    May not work if the notebook for jupyterlab
     '''
+    # return
     start_md5 = hashlib.md5(open(file_path,'rb').read()).hexdigest()
-    display(Javascript('IPython.notebook.save_checkpoint();'))
     current_md5 = start_md5
-    
+    display(Javascript('IPython.notebook.save_checkpoint();'))
+    wait_time = 0
     while start_md5 == current_md5:
         time.sleep(1)
         current_md5 = hashlib.md5(open(file_path,'rb').read()).hexdigest()
+        wait_time += 1
+        if wait_time>5:
+            print('Notebook not saving...')
+            break
+
+def get_running_code_string(file_path):
+    '''Get the code from the running cell
+    '''
+    f = open(file_path, 'r')            
+    code_str = f.read()   
+    return code_str
+
+
 def get_running_path():
     '''Get the path of the script / notebook which is being run
     '''
@@ -297,7 +312,7 @@ def FIG_save_svg_meta(fig, fig_name='', fig_folder=None, **kwargs):
     save_cell_code = kwargs.get("save_cell_code", False)
     save_nb_path = kwargs.get("save_nb_path", True)
     fig_ow = kwargs.get("fig_ow", 'ow') # 'ow' overwrite, 'skip' don't change, 'date' add date...
-    if context_note is not '':
+    if context_note !='':
         annotate_svg=True
 
     # Get fig name + date
