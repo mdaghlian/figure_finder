@@ -64,7 +64,7 @@ class FigureSaver(object):
         mpl.rcParams['font.size'] = 10    # Default fontsize
         # mpl.rcParams['text.usetex'] = True
         mpl.rcParams['mathtext.default'] = 'regular' 
-        mpl.rcParams['font.sans-serif'] = ['Arial'] 
+        mpl.rcParams['font.sans-serif'] = ['Liberation Sans'] 
         mpl.rcParams['font.family'] = 'sans-serif'
         # Set up saving folder...
         if not self.save_mode:
