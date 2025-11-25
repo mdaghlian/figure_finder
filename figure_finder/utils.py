@@ -48,7 +48,7 @@ def save_notebook(file_path):
         current_md5 = hashlib.md5(open(file_path,'rb').read()).hexdigest()
         wait_time += 1
         if wait_time>5:
-            print('Notebook not saving...')
+            print('tried to do ctrl+s from here - did not work. remember to save before running...')
             break
 
 def get_running_code_string(file_path):

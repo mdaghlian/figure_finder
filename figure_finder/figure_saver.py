@@ -64,10 +64,13 @@ class FigureSaver(object):
         mpl.rcParams['font.size'] = 10    # Default fontsize
         # mpl.rcParams['text.usetex'] = True
         mpl.rcParams['mathtext.default'] = 'regular' 
+        mpl.rcParams['font.sans-serif'] = ['Arial'] 
+        mpl.rcParams['font.family'] = 'sans-serif'
         # Set up saving folder...
         if not self.save_mode:
+            print('Save mode is FALSE -> not saving anything')
             return
-
+        
         if os.path.exists(self.path):
             print('FOLDER ALREADY EXISTS!')
             if folder_ow:
@@ -81,7 +84,12 @@ class FigureSaver(object):
             print('Making folder')
             os.makedirs(self.path)
 
-
+    def save_running_code(self):
+        if not self.save_mode:
+            print('Save mode turned off')
+        else:
+            save_running_code(self.path)
+        
     
     def add_img(self, fig, fig_name='', **kwargs):        
         '''add_img
